@@ -1,0 +1,23 @@
+{
+  "$schema": "https://evorule.org/schemas/agent_def/v1.0.json",
+  "kind": "agent_def",
+  "id": "com.example.agent.researcher",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "研究型 agent 示例",
+    "description": "展示 evorule-system-rules v1.0 agent_def 格式。2026-08-27 已用 evo-agent 真实资产回归验证（AgentDefinition struct），原 D5 未验证草案标记移除。",
+    "authors": ["bob@example.com"],
+    "created": "2026-08-23",
+    "updated": "2026-08-27",
+    "tags": ["example", "agent"],
+    "provenance": { "source": "manual" }
+  },
+  "agent_type": "researcher",
+  "description": "Research agent — summary and search",
+  "system_prompt": "You are a careful research assistant.",
+  "model": "MiniMax-M2.5",
+  "temperature": 0.3,
+  "max_steps": 20,
+  "step_timeout_secs": 60,
+  "tools": ["file_read", "search_files", "file_list"]
+}

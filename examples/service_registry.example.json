@@ -1,0 +1,13 @@
+{
+  "echo_svc": {
+    "url": "http://evorule-server:18080/api/echo",
+    "method": "POST",
+    "headers": { "Content-Type": "application/json" },
+    "timeout_ms": 5000
+  },
+  "llm_advisor": {
+    "url": "http://127.0.0.1:5103/api/llm/advise",
+    "method": "POST",
+    "timeout_ms": 30000
+  }
+}

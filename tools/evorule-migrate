@@ -1,0 +1,438 @@
+#!/usr/bin/env python3
+"""
+evorule-migrate:evorule-system-rules 的工具入口。
+
+子命令:
+  validate    校验一个 system JSON 符合指定 $schema
+  upgrade     把 v0 JSON 升级到 v0.9(跑 migration 规则)
+  run-migration  跑一组 migration 规则
+  list-kinds  列出所有支持的 kind
+
+设计原则:工具极简,业务逻辑全在 migration 规则里(自举)。
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+try:
+    import jsonschema
+    from referencing import Registry, Resource
+    from referencing.jsonschema import DRAFT202012
+except ImportError:
+    print("错误:需要 jsonschema + referencing 库。运行:pip install jsonschema referencing", file=sys.stderr)
+    sys.exit(2)
+
+ROOT = Path(__file__).resolve().parent.parent
+SCHEMAS_DIR = ROOT / "schemas"
+EXAMPLES_DIR = ROOT / "examples"
+MIGRATIONS_DIR = ROOT / "migrations"
+
+
+def load_schema(kind: str, version: str) -> dict:
+    """加载某个 kind 的指定版本 schema。"""
+    path = SCHEMAS_DIR / kind / f"{version}.json"
+    if not path.exists():
+        available = sorted(p.stem for p in (SCHEMAS_DIR / kind).glob("v*.json"))
+        raise FileNotFoundError(
+            f"找不到 {kind} 的 {version} schema({path})。"
+            f"可用版本:{available or '(无)'}"
+        )
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_meta(version: str) -> dict:
+    """加载 _meta schema(通用 5 顶层字段)。"""
+    path = SCHEMAS_DIR / "_meta" / f"{version}.json"
+    if not path.exists():
+        raise FileNotFoundError(f"找不到 _meta {version}({path})")
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_json(path: Path) -> Any:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_json(path: Path, data: Any) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+
+# ---------- 校验 ----------
+
+def cmd_validate(args: argparse.Namespace) -> int:
+    """校验 system JSON 符合 schema。
+
+    D2 sidecar 支持（2026-08-27）：若输入缺 $schema 且存在同名 `<input>.meta.json`
+    标注层文件，则合并「主体对象映射 + sidecar 的 5 个标注字段」后按标注层的
+    $schema 校验（与 _verify_schemas.py 真实资产合并视图同构）。
+    """
+    input_path = Path(args.input)
+
+    # sidecar 标注层文件被直接校验时给出引导性报错（而非费解的 schema 报错）
+    if input_path.name.endswith(".meta.json"):
+        print(
+            f"错误:{input_path.name} 是 sidecar 标注层，不能单独作为待校验文档。\n"
+            f"  正确用法：evorule-migrate validate <主体文件名>（自动合并本标注层）",
+            file=sys.stderr,
+        )
+        return 1
+
+    data = load_json(input_path)
+    schema_url = data.get("$schema", "")
+    via_sidecar: str | None = None
+
+    if not schema_url:
+        meta_path = input_path.with_name(input_path.name + ".meta.json")
+        if meta_path.exists():
+            meta = load_json(meta_path)
+            schema_url = meta.get("$schema", "")
+            if not schema_url:
+                print(f"错误:{meta_path.name} 缺少 $schema 字段", file=sys.stderr)
+                return 1
+            # 合并视图：主体对象映射 + sidecar 标注（body*/三个说明键不参与）
+            data = dict(data)
+            for k, v in meta.items():
+                if k not in ("body", "body_format", "body_note"):
+                    data[k] = v
+            via_sidecar = meta_path.name
+        else:
+            print(
+                f"错误:{args.input} 缺少 $schema 字段(也无同名 .meta.json sidecar 标注层)",
+                file=sys.stderr,
+            )
+            return 1
+
+    # 解析 URL:https://evorule.org/schemas/<kind>/<version>.json
+    # 拆解:['https:', '', 'evorule.org', 'schemas', '<kind>', '<version>']
+    url_no_ext = schema_url[:-5] if schema_url.endswith(".json") else schema_url
+    parts = url_no_ext.split("/")
+    if len(parts) < 6 or parts[-3] != "schemas":
+        print(f"错误:无法解析 $schema URL:{schema_url}", file=sys.stderr)
+        return 1
+    kind = parts[-2]
+    version = parts[-1]
+
+    try:
+        meta = load_meta(version)
+        kind_schema = load_schema(kind, version)
+    except FileNotFoundError as e:
+        print(f"错误:{e}", file=sys.stderr)
+        return 1
+
+    # 用 referencing 注册本地 schema,这样 $ref 不会去 fetch 网络
+    registry = Registry()
+    for k_dir in SCHEMAS_DIR.iterdir():
+        if not k_dir.is_dir():
+            continue
+        for sf in k_dir.glob("v*.json"):
+            with open(sf, "r", encoding="utf-8") as f:
+                contents = f.read()
+            resource = Resource.from_contents(
+                json.loads(contents), default_specification=DRAFT202012
+            )
+            # 用文件 URI 当 ID
+            file_uri = f"file:///{sf.as_posix().lstrip('/')}"
+            registry = registry.with_resource(uri=file_uri, resource=resource)
+            # 同时按 $id 注册
+            sid = json.loads(contents).get("$id")
+            if sid:
+                registry = registry.with_resource(uri=sid, resource=resource)
+
+    validator_cls = jsonschema.Draft202012Validator
+    validator = validator_cls(kind_schema, registry=registry)
+    errors = list(validator.iter_errors(data))
+
+    if errors:
+        print(f"校验失败({args.input}):")
+        for err in errors:
+            path = "/".join(str(p) for p in err.absolute_path) or "<root>"
+            print(f"  - /{path}: {err.message}")
+        return 1
+
+    suffix = f" [sidecar merge: {via_sidecar}]" if via_sidecar else ""
+    print(f"OK {args.input} (kind={kind}, schema={version}){suffix}")
+    return 0
+
+
+# ---------- 迁移 ----------
+
+def apply_transform(data: dict, transform: dict) -> dict:
+    """应用单个 transform 到 data。返回新 dict(不修改原对象)。
+
+    支持的 transform 子集(初级版):
+      - when: { "missing": "field.path" }  字段不存在
+      - when: { "present": "field.path" }  字段存在
+      - then: { "set": "field.path = value" }  设置字段
+        value 模板支持: <derived-by-tool> / <derived-from-path> / <git-user-email> /
+                       'literal string' / 普通 JSON 值
+    """
+    import copy
+    result = copy.deepcopy(data)
+    when = transform.get("when", {})
+    then = transform.get("then", {})
+
+    # 检查 when 条件
+    matched = True
+    for op, arg in when.items():
+        if op == "missing":
+            if get_path(result, arg) is not None:
+                matched = False
+                break
+        elif op == "present":
+            if get_path(result, arg) is None:
+                matched = False
+                break
+        else:
+            # 未知 when 操作,保守跳过
+            pass
+
+    if not matched:
+        return result
+
+    # 应用 then
+    set_expr = then.get("set", "")
+    if not set_expr:
+        return result
+
+    if "=" not in set_expr:
+        return result
+
+    field_path, value_expr = set_expr.split("=", 1)
+    field_path = field_path.strip()
+    value_expr = value_expr.strip()
+
+    # 解析值
+    value = resolve_value_template(value_expr, result)
+
+    set_path(result, field_path, value)
+    return result
+
+
+def get_path(data: Any, path: str) -> Any:
+    """按点分路径取值。例:get_path(d, "metadata.title")"""
+    parts = path.split(".")
+    cur = data
+    for p in parts:
+        if isinstance(cur, dict) and p in cur:
+            cur = cur[p]
+        else:
+            return None
+    return cur
+
+
+def set_path(data: Any, path: str, value: Any) -> None:
+    """按点分路径设置值,自动创建中间 dict。"""
+    parts = path.split(".")
+    cur = data
+    for p in parts[:-1]:
+        if p not in cur or not isinstance(cur[p], dict):
+            cur[p] = {}
+        cur = cur[p]
+    cur[parts[-1]] = value
+
+
+def resolve_value_template(expr: str, context: dict) -> Any:
+    """解析 then.set 的值表达式。
+
+    支持:
+      - 'literal string'  → 字符串字面量
+      - "double quoted"   → 字符串字面量
+      - <derived-by-tool> → None(占位,需外部工具补)
+      - <git-user-email>  → None(占位)
+      - { ... }           → 解析为 JSON 对象
+      - 数字 / true/false/null
+    """
+    expr = expr.strip()
+
+    # 占位符
+    if expr.startswith("<") and expr.endswith(">"):
+        return expr  # 保留占位,人工后续填
+
+    # 字符串字面量
+    if (expr.startswith("'") and expr.endswith("'")) or (
+        expr.startswith('"') and expr.endswith('"')
+    ):
+        return expr[1:-1]
+
+    # 简单 JSON
+    if expr.startswith("{") or expr.startswith("["):
+        try:
+            return json.loads(expr)
+        except json.JSONDecodeError:
+            return expr
+
+    # 数字
+    try:
+        if "." in expr:
+            return float(expr)
+        return int(expr)
+    except ValueError:
+        pass
+
+    # 布尔 / null
+    if expr == "true":
+        return True
+    if expr == "false":
+        return False
+    if expr == "null":
+        return None
+
+    # 否则:尝试变量插值(简化:支持 `kind` / `id` / `version` 顶层字段)
+    if expr.startswith("'") and "' + " in expr and " + '" in expr:
+        # 字符串拼接: 'prefix' + var + 'suffix'
+        try:
+            return eval_simple_concat(expr, context)
+        except Exception:
+            return expr
+
+    return expr
+
+
+def eval_simple_concat(expr: str, context: dict) -> Any:
+    """求值 'literal' + var + 'literal' 形式的拼接。"""
+    import re
+    tokens = re.findall(r"'([^']*)'|(\b[a-zA-Z_][a-zA-Z0-9_]*\b)", expr)
+    parts: list[str] = []
+    for lit, var in tokens:
+        if lit:
+            parts.append(lit)
+        elif var and var in context:
+            parts.append(str(context[var]))
+        else:
+            parts.append(f"<{var}>")
+    return "".join(parts)
+
+
+def run_migration(data: dict, migration: dict) -> dict:
+    """跑一个 migration 的所有 transforms,顺序应用。"""
+    for t in migration.get("transforms", []):
+        data = apply_transform(data, t)
+    return data
+
+
+def cmd_upgrade(args: argparse.Namespace) -> int:
+    """把 v0 JSON 升级到 v0.9。"""
+    src = load_json(Path(args.input))
+
+    # 加载 migration
+    migration_files = sorted((MIGRATIONS_DIR / f"{args.from_schema}-to-{args.to_schema}").glob("*.json"))
+    if not migration_files:
+        print(f"错误:找不到 migration {args.from_schema} → {args.to_schema}", file=sys.stderr)
+        return 1
+
+    data = src
+    applied = []
+    for mf in migration_files:
+        mig = load_json(mf)
+        before = json.dumps(data, ensure_ascii=False, sort_keys=True)
+        data = run_migration(data, mig)
+        after = json.dumps(data, ensure_ascii=False, sort_keys=True)
+        changed = before != after
+        applied.append((mf.name, len(mig.get("transforms", [])), changed))
+
+    if args.output:
+        save_json(Path(args.output), data)
+        print(f"[OK] 已写入 {args.output}")
+    else:
+        print(json.dumps(data, ensure_ascii=False, indent=2))
+
+    print("\n应用的 migrations:")
+    for name, n_t, changed in applied:
+        marker = "[OK]" if changed else "[no-op]"
+        print(f"  {marker} {name}: {n_t} transforms")
+
+    # 报告仍存在的 <derived-*> 占位
+    remaining = find_placeholders(data)
+    if remaining:
+        print("\n[WARN] 以下占位符需要人工或工具补全:")
+        for path in remaining:
+            print(f"  - {path}")
+        return 2
+
+    return 0
+
+
+def find_placeholders(data: Any, path: str = "") -> list[str]:
+    """找出所有 <...> 占位符的路径。"""
+    found = []
+    if isinstance(data, dict):
+        for k, v in data.items():
+            sub = f"{path}.{k}" if path else k
+            found.extend(find_placeholders(v, sub))
+    elif isinstance(data, list):
+        for i, v in enumerate(data):
+            found.extend(find_placeholders(v, f"{path}[{i}]"))
+    elif isinstance(data, str) and data.startswith("<") and data.endswith(">"):
+        found.append(f"{path} = {data}")
+    return found
+
+
+def cmd_run_migration(args: argparse.Namespace) -> int:
+    """跑一组指定的 migration 规则。"""
+    data = load_json(Path(args.input))
+    for mp in args.migration:
+        mig = load_json(Path(mp))
+        data = run_migration(data, mig)
+        print(f"[OK] 已应用 {mp}")
+    if args.output:
+        save_json(Path(args.output), data)
+        print(f"[OK] 已写入 {args.output}")
+    else:
+        print(json.dumps(data, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_list_kinds(args: argparse.Namespace) -> int:
+    """列出所有支持的 kind + 版本。"""
+    print("支持的 kind:")
+    for kind_dir in sorted(SCHEMAS_DIR.iterdir()):
+        if not kind_dir.is_dir() or kind_dir.name.startswith("_"):
+            continue
+        versions = sorted(p.stem for p in kind_dir.glob("v*.json"))
+        print(f"  - {kind_dir.name}: {', '.join(versions)}")
+    return 0
+
+
+# ---------- CLI ----------
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        prog="evorule-migrate",
+        description="evorule-system-rules 工具:校验 / 迁移 / 跑规则",
+    )
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    p_val = sub.add_parser("validate", help="校验 system JSON 符合 schema")
+    p_val.add_argument("input", help="待校验的 JSON 文件")
+    p_val.set_defaults(func=cmd_validate)
+
+    p_up = sub.add_parser("upgrade", help="把 v0 JSON 升级到 v0.9")
+    p_up.add_argument("input", help="输入 JSON")
+    p_up.add_argument("-o", "--output", help="输出 JSON(默认 stdout)")
+    p_up.add_argument("--from-schema", default="v0", help="起始 $schema 版本")
+    p_up.add_argument("--to-schema", default="v0.9", help="目标 $schema 版本")
+    p_up.set_defaults(func=cmd_upgrade)
+
+    p_run = sub.add_parser("run-migration", help="跑指定的 migration 规则")
+    p_run.add_argument("input", help="输入 JSON")
+    p_run.add_argument("migration", nargs="+", help="migration JSON 文件(可多个)")
+    p_run.add_argument("-o", "--output", help="输出 JSON(默认 stdout)")
+    p_run.set_defaults(func=cmd_run_migration)
+
+    p_lk = sub.add_parser("list-kinds", help="列出所有支持的 kind")
+    p_lk.set_defaults(func=cmd_list_kinds)
+
+    args = parser.parse_args()
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

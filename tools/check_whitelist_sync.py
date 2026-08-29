@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+check_whitelist_sync.py: 白名单对齐闸（77 线1 第 3 行 / 70 F-01）。
+
+对"元指令类型白名单"做三向一致性校验，确保上层校验语义不会与 TCB 权威源漂移：
+
+    权威源  evorule-tcb/src/executor.rs::execute_meta_instruction 的 dispatch（L95-105）
+      ↕ 一致
+    1)  schema  enum  schemas/_shared/v1.0.json -> $defs.transform_rule.properties.type.enum
+    2)  governance 白名单  evorule-governance/src/rule_validation.rs -> VALID_TRANSFORM_TYPES
+    3)  CLI 白名单  evorule-cli/src/commands/validate.rs -> VALID_TRANSFORM_TYPES
+
+修复背景（P0-01）：governance/CLI 曾把指令层类型（noop/increment/decrement）误混入元指令白名单，
+且漏掉 collect/merge，导致假阳性/假阴性。本次脚本把"对齐"从**手动 + 自我引用测试**（断言常量==
+测试里硬编码的同一份字面量，TCB 变更时依旧全绿）升级为**引用权威源的自动校验**：TCB 一旦新增/
+调整元指令，本脚本立即 FAIL，拦截静默漂移。
+
+用法:
+    python tools/check_whitelist_sync.py
+
+退出码:
+    0 - 四处一致（TCB dispatch == schema enum == governance == CLI）
+    1 - 存在不一致（任一来源解析失败或列表不同）
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+SCHEMAS_DIR = HERE.parent / "schemas"
+
+# 外部仓路径：可用环境变量覆盖（默认与 _verify_schemas.py 相同的本机路径）
+EVORULE_REPO = Path(os.environ.get("EVORULE_REPO", r"D:\evorule"))
+EVORULE_SERVER_REPO = Path(os.environ.get("EVORULE_SERVER_REPO", r"D:\evorule-server"))
+
+TCB_EXECUTOR = EVORULE_REPO / "evorule-tcb" / "src" / "executor.rs"
+GOVERNANCE_RULE_VALIDATION = EVORULE_REPO / "evorule-governance" / "src" / "rule_validation.rs"
+CLI_VALIDATE = EVORULE_REPO / "evorule-cli" / "src" / "commands" / "validate.rs"
+SHARED_SCHEMA = SCHEMAS_DIR / "_shared" / "v1.0.json"
+
+# 解析器：提取 Rust 字符串字面量数组项 "word"
+STR_LITERAL_RE = re.compile(r'"([a-z_]+)"\s*=>\s*exec_')
+
+
+def extract_tcb_dispatch() -> list[str]:
+    """从 executor.rs 的 `match instr_type` 分支提取元指令名（6 种）。"""
+    src = TCB_EXECUTOR.read_text(encoding="utf-8")
+    m = re.search(r"match instr_type \{(.*?)\n\s*_\s*=>", src, re.DOTALL)
+    if not m:
+        raise RuntimeError(f"未找到 match instr_type 分支块: {TCB_EXECUTOR}")
+    names = STR_LITERAL_RE.findall(m.group(1))
+    if not names:
+        raise RuntimeError(f"match instr_type 分支块内未解析到任何指令名: {TCB_EXECUTOR}")
+    return sorted(set(names))
+
+
+def extract_rust_str_array(path: Path, const_name: str) -> list[str]:
+    """从 Rust 常量数组 `const NAME: &[&str] = &[...]` 提取字符串项。"""
+    src = path.read_text(encoding="utf-8")
+    pat = re.compile(
+        rf"const\s+{const_name}\s*:\s*&\[&str\]\s*=\s*&\s*\[(.*?)\]",
+        re.DOTALL,
+    )
+    m = pat.search(src)
+    if not m:
+        raise RuntimeError(f"未找到常量 {const_name}: {path}")
+    items = re.findall(r'"([a-z_]+)"', m.group(1))
+    if not items:
+        raise RuntimeError(f"常量 {const_name} 数组为空或解析失败: {path}")
+    return sorted(set(items))
+
+
+def extract_schema_enum() -> list[str]:
+    """从 _shared/v1.0.json 的 $defs.transform_rule.properties.type.enum 提取元指令名。"""
+    doc = json.loads(SHARED_SCHEMA.read_text(encoding="utf-8"))
+    enum = doc["$defs"]["transform_rule"]["properties"]["type"]["enum"]
+    return sorted(set(enum))
+
+
+def main() -> int:
+    print("== 白名单对齐闸（77 线1 / 70 F-01）：TCB dispatch ↔ schema ↔ governance ↔ CLI ==")
+    checks: dict[str, list[str]] = {}
+    labels = {
+        "tcb": "TCB executor.rs dispatch",
+        "schema": "schema _shared enum",
+        "governance": "governance rule_validation.rs",
+        "cli": "CLI validate.rs",
+    }
+    try:
+        checks["tcb"] = extract_tcb_dispatch()
+        checks["schema"] = extract_schema_enum()
+        checks["governance"] = extract_rust_str_array(GOVERNANCE_RULE_VALIDATION, "VALID_TRANSFORM_TYPES")
+        checks["cli"] = extract_rust_str_array(CLI_VALIDATE, "VALID_TRANSFORM_TYPES")
+    except FileNotFoundError as e:
+        print(f"  [FAIL] 权威源文件缺失——请用 EVORULE_REPO / EVORULE_SERVER_REPO 指向已检出的权威仓: {e}")
+        return 1
+    except Exception as e:  # noqa: BLE001 - 解析失败视为门禁失败
+        print(f"  [FAIL] {e}")
+        return 1
+
+    for key, names in checks.items():
+        print(f"  [{labels[key]}] {', '.join(names)}")
+
+    baseline = checks["tcb"]
+    all_ok = True
+    for key, names in checks.items():
+        if names != baseline:
+            all_ok = False
+            print(f"  [FAIL] {labels[key]} 与 TCB 不一致: 差集={sorted(set(names) ^ set(baseline))}")
+
+    if all_ok:
+        print(f"  [PASS] 四处白名单一致（{len(baseline)} 种元指令: {', '.join(baseline)}）")
+        return 0
+    print("  [FAIL] 白名单不一致——TCB 权威源已变更或上层未同步，需立即对齐（防 P0-01 复发）")
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

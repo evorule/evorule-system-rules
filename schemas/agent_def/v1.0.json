@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/agent_def/v1.0.json",
+  "title": "evorule agent_def v1.0（已验证：对齐 evo-agent AgentDefinition）",
+  "description": "evorule agent 定义（对应 evo-agent/agents/*.json）。2026-08-27 用真实资产回归修订（原 D5 未验证草案作废）：body 对齐 evo-agent src/agent/definition.rs 的 AgentDefinition struct 反序列化真值——system_prompt 内联、model/temperature 平铺顶层。门卫约定：加载侧强制 temperature∈[0,2]、max_steps≥1、step_timeout_secs≥1、agent_type∈[A-Za-z0-9_-]+（路径穿越防护），本 schema 以 pattern/minimum 与之同构。",
+  "x_legal_authority_notice": "本 schema 由 EvoRule 团队维护,以 CC0 1.0 公共领域奉献(见 schemas/LICENSE-SCHEMAS.md);通过本 schema 校验或创作的 system JSON 内容 IP 归作者所有,evorule 不主张。详见 ../../LEGAL_NOTES.md 与 ../../docs/adr/scope-split-ip-model.md",
+  "allOf": [
+    { "$ref": "../_meta/v1.0.json" },
+    {
+      "type": "object",
+      "required": [
+        "agent_type",
+        "version",
+        "description",
+        "system_prompt",
+        "model",
+        "temperature",
+        "max_steps",
+        "step_timeout_secs",
+        "tools"
+      ],
+      "properties": {
+        "kind": { "const": "agent_def" },
+        "agent_type": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "agent 类型标识符，同时是文件名 agents/<agent_type>.json。白名单防止路径穿越（加载器以该值拼接路径）。"
+        },
+        "version": {
+          "type": "string",
+          "description": "定义内容版本号"
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "system_prompt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "内联 system prompt 全文（v1.0 真值为内联而非外部引用；prompt_ref 提案被真实结构否决）"
+        },
+        "model": { "type": "string", "minLength": 1 },
+        "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+        "max_steps": { "type": "integer", "minimum": 1 },
+        "step_timeout_secs": { "type": "integer", "minimum": 1 },
+        "tools": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "memory": {
+          "type": "object",
+          "description": "内存配置（type: none|persistent; namespace; message_persist: {mode: every_message|every_n|per_react_round|disabled, n?}）",
+          "properties": {
+            "type": { "enum": ["none", "persistent"] },
+            "namespace": { "type": "string" },
+            "message_persist": {
+              "type": "object",
+              "required": ["mode"],
+              "properties": {
+                "mode": {
+                  "enum": ["every_message", "every_n", "per_react_round", "disabled"]
+                },
+                "n": { "type": "integer", "minimum": 1 }
+              }
+            }
+          }
+        },
+        "output_format": {
+          "description": "输出格式配置（可为 null）"
+        },
+        "context_window_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "G2:上下文窗口 token 数（可选，默认 8192）"
+        },
+        "max_parallel_tools": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "G13:单轮并行工具调用上限（可选，默认 1 = 串行）"
+        }
+      }
+    }
+  ]
+}

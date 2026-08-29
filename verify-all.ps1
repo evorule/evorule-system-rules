@@ -1,0 +1,83 @@
+﻿# verify-all.ps1 —— system-rules 一键预检（宪法自身健康闭环）
+#
+# 任一步失败即以非零码退出。server 副本同步检查仅在 server 仓存在时执行。
+# 用法: powershell -File verify-all.ps1        （建议在本仓根目录执行）
+#       或任意 cwd 执行亦可——各脚本已锚定仓根，不受当前目录影响。
+#
+# 2026-08-27 建立：落地 PLANNING_FINALIZE M4-A3。
+#   过渡态守卫闭环；待 G1"门禁即规则"设计定稿后，政策性检查项将迁移为热加载规则集。
+
+$ErrorActionPreference = 'Stop'
+$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+Push-Location $root
+
+$results = [System.Collections.Generic.List[object]]::new()
+$failed = $false
+
+function Invoke-Step {
+    param([string]$Name, [scriptblock]$Action)
+    Write-Host ""
+    Write-Host ("=" * 72)
+    Write-Host "[STEP] $Name"
+    Write-Host ("=" * 72)
+    try {
+        & $Action
+        if ($LASTEXITCODE -ne 0) { throw "退出码 $LASTEXITCODE" }
+        $script:results.Add([PSCustomObject]@{ Step = $Name; Result = 'PASS' })
+    } catch {
+        $script:results.Add([PSCustomObject]@{ Step = $Name; Result = "FAIL ($($_.Exception.Message))" })
+        $script:failed = $true
+    }
+}
+
+Invoke-Step 'schema 闭环验收 (tools/verify_schemas.py)' {
+    python (Join-Path $root 'tools\verify_schemas.py')
+}
+Invoke-Step 'docs 链接检查 (tools/check_docs_links.py)' {
+    python (Join-Path $root 'tools\check_docs_links.py')
+}
+$empirical = Join-Path $root '_empirical_interception.py'
+if (Test-Path $empirical) {
+    Invoke-Step 'Opt1-4 拦截实证 (_empirical_interception.py)' {
+        python $empirical
+    }
+} else {
+    Write-Host "`n[SKIP] 拦截实证脚本不在仓内(内部工具,存于 knowledge vault),跳过"
+}
+$serverSync = 'D:\evorule-server\scripts\check_schema_sync.py'
+if (Test-Path $serverSync) {
+    Invoke-Step 'server 内嵌副本一致性 (check_schema_sync.py, check-only)' {
+        python $serverSync
+    }
+} else {
+    Write-Host "`n[SKIP] server 仓不存在($serverSync)，跳过副本同步检查"
+}
+$rootRepo = 'D:\evorule'
+if (Test-Path $rootRepo) {
+    Invoke-Step '根仓数据格式门禁 (scan_repo_json.py → evorule)' {
+        python (Join-Path $root '..\evorule-system-rules\tools\scan_repo_json.py') --repo $rootRepo
+    }
+} else {
+    Write-Host "`n[SKIP] 根仓不存在($rootRepo)，跳过根仓门禁扫描"
+}
+$evoAgent = 'D:\evo-agent'
+if (Test-Path $evoAgent) {
+    Invoke-Step 'evo-agent 资产 schema 校验 (tools/check_evoagent_assets.py)' {
+        python (Join-Path $root 'tools\check_evoagent_assets.py') $evoAgent
+    }
+} else {
+    Write-Host "`n[SKIP] evo-agent 仓不存在($evoAgent)，跳过资产校验"
+}
+
+Write-Host ""
+Write-Host ("=" * 72)
+$results | Format-Table -AutoSize
+Pop-Location
+
+if ($failed) {
+    Write-Host "VERIFY-ALL: FAIL（存在失败步骤，逐项排查后重跑）" -ForegroundColor Red
+    exit 1
+} else {
+    Write-Host "VERIFY-ALL: ALL PASS" -ForegroundColor Green
+    exit 0
+}

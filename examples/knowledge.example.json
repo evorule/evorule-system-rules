@@ -1,0 +1,41 @@
+{
+  "$schema": "https://evorule.org/schemas/knowledge/v1.0.json",
+  "kind": "knowledge",
+  "id": "com.example.knowledge.evorule_pitfalls",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "evorule 坑点知识库示例（未验证草案）",
+    "description": "展示 evorule-system-rules v1.0 knowledge 格式。⚠️ 本 kind 为未验证草案（D5）；且注意 D:\\evorule-server\\docs\\PITFALLS.json 自身部分条目已过时（valid_domain_types 缺 has_fields、valid_meta_instructions 缺 collect/merge、P09/P17/P18 与现行 v0.3.1 引擎不一致），引用时需以 records/70 事实源清单为准。",
+    "authors": ["eve@example.com"],
+    "created": "2026-08-23",
+    "updated": "2026-08-23",
+    "tags": ["example", "pitfalls"],
+    "license": "AGPL-3.0-or-later"
+  },
+  "entries": [
+    {
+      "id": "P001",
+      "title": "JSON 不带 BOM",
+      "content": "PowerShell 5.1 默认 GBK 解码会破坏 UTF-8 中文文件。批量处理必须用 [System.IO.File]::ReadAllText 显式 UTF-8。",
+      "category": "encoding",
+      "severity": "warning",
+      "related": ["P002"]
+    },
+    {
+      "id": "P002",
+      "title": "业务 set 指令的 operation 字段被 core_eval 忽略（A-1）",
+      "content": "core_eval 的 set 处理器硬编码 operation='set'，业务 set 指令 params 里的 operation=add/sub 会被忽略、执行覆盖语义。累加必须用 increment/decrement 指令（映射为 set add/sub）。注意：transform 元指令层的 set 仍支持 operation=add/sub。",
+      "category": "rule_writing",
+      "severity": "error",
+      "related": []
+    },
+    {
+      "id": "P003",
+      "title": "TCB 无 Float 变体，浮点以字符串透传",
+      "content": "evorule-tcb 的 JsonValue 无 Float 变体，外部 JSON 浮点数转成字符串。精度判断（residual < tolerance）必须在外部服务里做并返回布尔标志，规则只判断布尔结果。lt 只支持 Integer 比较。",
+      "category": "tcb_limit",
+      "severity": "error",
+      "related": []
+    }
+  ]
+}

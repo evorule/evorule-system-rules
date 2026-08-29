@@ -1,0 +1,65 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "com.example.minimal",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "最小规则集示例（引擎原生 transform）",
+    "description": "展示 evorule-system-rules v1.0 rule_set 格式：body 为引擎原生 transform[]，与 core_eval.json 同构（zero-translation）。双层语言：branch.on_true 装元指令层；push.instructions 装指令层。",
+    "authors": ["alice@example.com"],
+    "created": "2026-08-23",
+    "updated": "2026-08-23",
+    "tags": ["example", "minimal"],
+    "license": "AGPL-3.0-or-later"
+  },
+  "transform": [
+    {
+      "type": "branch",
+      "params": {
+        "domain": { "type": "instruction", "instruction_type": "increment" },
+        "on_true": [
+          {
+            "type": "set",
+            "params": {
+              "attr": "counter",
+              "operation": "add",
+              "value": "__exec__.instruction.params.delta"
+            }
+          }
+        ],
+        "on_false": []
+      }
+    },
+    {
+      "type": "branch",
+      "params": {
+        "domain": {
+          "type": "not",
+          "inner": {
+            "type": "exists",
+            "path": "__exec__.payload.counter"
+          }
+        },
+        "on_true": [
+          {
+            "type": "set",
+            "params": {
+              "attr": "counter",
+              "operation": "set",
+              "value": 0
+            }
+          }
+        ],
+        "on_false": []
+      }
+    },
+    {
+      "type": "branch",
+      "params": {
+        "domain": { "type": "all", "inner": [] },
+        "on_true": [],
+        "on_false": []
+      }
+    }
+  ]
+}

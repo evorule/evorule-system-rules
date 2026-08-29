@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/migration/v1.0.json",
+  "title": "evorule migration v1.0（固化版）",
+  "description": "$schema 升级迁移规则（自举核心：migration 规则本身也被 evorule-system-rules 治理）。v1.0 相对 v0.9 的根本变化（D3 直接对齐自举，records/50 §5.3）：transforms[] 由工具私有伪 DSL（when:missing/present + then:set \"path=value\"）改为引擎原生 TransformRule 语言（branch+domain 判断，set/push/collect/merge 改值）。执行约定：迁移目标 JSON 文档作为 __exec__.payload 加载，合成一条 {\"type\":\"migrate\"} 指令触发迁移 transform 匹配——与核心宪法同构，可审计、可重放。transform_rule/domain 定义引用 _shared/v1.0.json（SSOT，records/70）。",
+  "x_legal_authority_notice": "本 schema 由 EvoRule 团队维护,以 CC0 1.0 公共领域奉献(见 schemas/LICENSE-SCHEMAS.md);通过本 schema 校验或创作的 system JSON 内容 IP 归作者所有,evorule 不主张。详见 ../../LEGAL_NOTES.md 与 ../../docs/adr/scope-split-ip-model.md",
+  "allOf": [
+    { "$ref": "../_meta/v1.0.json" },
+    {
+      "type": "object",
+      "properties": {
+        "kind": { "const": "migration" },
+        "from_version": {
+          "type": "string",
+          "pattern": "^v\\d+\\.\\d+$",
+          "description": "起始 $schema 版本（两段式，与 URL 一致）"
+        },
+        "to_version": {
+          "type": "string",
+          "pattern": "^v\\d+\\.\\d+$",
+          "description": "目标 $schema 版本（两段式）"
+        },
+        "transform": {
+          "type": "array",
+          "description": "引擎原生 transform 规则数组（元指令层）。上限 64（TCB MAX_TRANSFORM_RULES）。",
+          "maxItems": 64,
+          "minItems": 1,
+          "items": { "$ref": "../_shared/v1.0.json#/$defs/transform_rule" }
+        }
+      },
+      "required": ["from_version", "to_version", "transform"],
+      "additionalProperties": true
+    }
+  ]
+}

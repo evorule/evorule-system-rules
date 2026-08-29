@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/service_registry/v1.0.json",
+  "title": "evorule service_registry v1.0（固化版）",
+  "description": "服务注册表：顶层对象映射 {svc_name: ServiceEntry}（对应 evorule-server/service_registry.json）。v1.0 相对 v0.9 的根本变化：body 由 services[] 数组改为对象映射（对齐 engine service_registry.rs load_from_str 遍历顶层键）。Sidecar 约定（D2，records/50 §5.2）：主文件保持纯对象映射零改动（引擎直接消费）；5 个治理标注字段（$schema/kind/id/version/metadata）存放在旁侧 sidecar 文件（service_registry.json.meta.json），校验/审计时合并 sidecar 标注 + 主体对象映射后再按本 schema 校验。禁止在 service_registry.json 主文件直接加 5 标注字段——engine 加载器会把它们当服务名解析并报 missing required field 'url'。ServiceEntry 定义引用 _shared/v1.0.json（SSOT）。",
+  "x_legal_authority_notice": "本 schema 由 EvoRule 团队维护,以 CC0 1.0 公共领域奉献(见 schemas/LICENSE-SCHEMAS.md);通过本 schema 校验或创作的 system JSON 内容 IP 归作者所有,evorule 不主张。详见 ../../LEGAL_NOTES.md 与 ../../docs/adr/scope-split-ip-model.md",
+  "allOf": [
+    { "$ref": "../_meta/v1.0.json" },
+    {
+      "type": "object",
+      "properties": {
+        "kind": { "const": "service_registry" },
+        "$schema": {},
+        "id": {},
+        "version": {},
+        "metadata": {}
+      },
+      "additionalProperties": { "$ref": "../_shared/v1.0.json#/$defs/service_entry" },
+      "description": "合并视图：5 个标注字段（由 _meta 严格校验）+ 其余键均为服务名，逐条按 service_entry 校验。"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/knowledge/v1.0.json",
+  "title": "evorule knowledge v1.0（未验证草案）",
+  "description": "知识库条目（对应 PITFALLS.json，或任何 RAG 文档集合）。⚠️ 未验证草案（D5，records/50 §5.5）：D:\\evorule-server\\docs\\PITFALLS.json 真实存在但结构尚未回归验证；example 中 P002 引用'path.rs 路径穿越'系已修复历史，需更新为现行事实。v1.0 冻结前必须用真实知识文件做 validate 回归，才可移出'未验证草案'。",
+  "x_legal_authority_notice": "本 schema 由 EvoRule 团队维护,以 CC0 1.0 公共领域奉献(见 schemas/LICENSE-SCHEMAS.md);通过本 schema 校验或创作的 system JSON 内容 IP 归作者所有,evorule 不主张。详见 ../../LEGAL_NOTES.md 与 ../../docs/adr/scope-split-ip-model.md",
+  "allOf": [
+    { "$ref": "../_meta/v1.0.json" },
+    {
+      "type": "object",
+      "properties": {
+        "kind": { "const": "knowledge" },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/entry" }
+        }
+      },
+      "required": ["entries"]
+    }
+  ],
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "required": ["id", "content"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+$" },
+        "title": { "type": "string", "maxLength": 200 },
+        "content": { "type": "string", "minLength": 1 },
+        "category": { "type": "string" },
+        "severity": {
+          "enum": ["info", "warning", "error", "critical"]
+        },
+        "related": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "相关条目 ID"
+        },
+        "embedding_ref": {
+          "type": "string",
+          "description": "embedding 存储引用(可选)"
+        }
+      }
+    }
+  }
+}

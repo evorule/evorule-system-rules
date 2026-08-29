@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/agent_def/v0.9.json",
+  "title": "evorule agent_def v0.9",
+  "description": "evorule agent 定义(对应 evo-agent/agents/*.json)",
+  "x_legal_authority_notice": "本 schema 由 EvoRule 团队维护,以 CC0 1.0 公共领域奉献(见 schemas/LICENSE-SCHEMAS.md);通过本 schema 校验或创作的 system JSON 内容 IP 归作者所有,evorule 不主张。详见 ../../LEGAL_NOTES.md 与 ../../docs/adr/scope-split-ip-model.md",
+  "allOf": [
+    { "$ref": "../_meta/v0.9.json" },
+    {
+      "type": "object",
+      "properties": {
+        "kind": { "const": "agent_def" },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "agent 能力列表,如 web_search / document_read"
+        },
+        "tools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "可调用的工具名,对应 service_registry 中的服务"
+        },
+        "prompt_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "system prompt 引用,可指向文件路径或外部 URL"
+        },
+        "model_config": {
+          "type": "object",
+          "properties": {
+            "provider": { "type": "string" },
+            "model": { "type": "string" },
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "max_tokens": { "type": "integer", "minimum": 1 }
+          }
+        }
+      },
+      "required": ["capabilities", "prompt_ref"]
+    }
+  ]
+}

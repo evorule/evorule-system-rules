@@ -1,0 +1,36 @@
+{
+  "$schema": "https://evorule.org/schemas/workflow_dag/v1.0.json",
+  "kind": "workflow_dag",
+  "id": "com.example.workflow.research_and_write",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "并行调研 + 串行写作 工作流示例",
+    "description": "展示 evorule-system-rules v1.0 workflow_dag 格式。2026-08-27 已用 evo-agent 真实资产回归验证（Workflow struct，隐式 depends_on 边表 + output_node），原 D5 未验证草案标记移除。",
+    "authors": ["bob@example.com"],
+    "created": "2026-08-23",
+    "updated": "2026-08-27",
+    "tags": ["example", "workflow"],
+    "provenance": { "source": "manual" }
+  },
+  "workflow_id": "research_and_write",
+  "description": "并行调研两个技术生态,再串行写作对比报告",
+  "nodes": [
+    {
+      "id": "research_rust",
+      "agent_type": "researcher",
+      "task": "调研 Rust 异步生态的最新进展"
+    },
+    {
+      "id": "research_python",
+      "agent_type": "researcher",
+      "task": "调研 Python 异步生态的最新进展"
+    },
+    {
+      "id": "write_report",
+      "agent_type": "writer",
+      "task_template": "基于以下两份调研结果写对比报告:\n=== Rust ===\n{research_rust}\n=== Python ===\n{research_python}",
+      "depends_on": ["research_rust", "research_python"]
+    }
+  ],
+  "output_node": "write_report"
+}

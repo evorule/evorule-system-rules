@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/rule_set/v0.9.json",
+  "title": "evorule rule_set v0.9",
+  "description": "evorule 业务规则集合 / TCB 规则集合",
+  "x_legal_authority_notice": "本 schema 由 EvoRule 团队维护,以 CC0 1.0 公共领域奉献(见 schemas/LICENSE-SCHEMAS.md);通过本 schema 校验或创作的 system JSON 内容 IP 归作者所有,evorule 不主张。详见 ../../LEGAL_NOTES.md 与 ../../docs/adr/scope-split-ip-model.md",
+  "allOf": [
+    { "$ref": "../_meta/v0.9.json" },
+    {
+      "type": "object",
+      "properties": {
+        "kind": { "const": "rule_set" },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/rule" }
+        }
+      },
+      "required": ["rules"]
+    }
+  ],
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "required": ["id", "when", "then"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^R\\d{3,6}$",
+          "description": "规则 ID,规则集内唯一"
+        },
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "when": {
+          "type": "object",
+          "description": "evorule when 表达式,具体语法见 evorule 引擎 spec",
+          "additionalProperties": true
+        },
+        "then": {
+          "type": "object",
+          "description": "evorule then 表达式",
+          "additionalProperties": true
+        },
+        "transform": {
+          "type": "object",
+          "description": "evorule transform 表达式(可选)",
+          "additionalProperties": true
+        },
+        "metadata": {
+          "type": "object",
+          "description": "规则级元数据(可选,继承规则集 metadata 的子集)"
+        }
+      }
+    }
+  }
+}

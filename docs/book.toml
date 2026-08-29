@@ -1,0 +1,33 @@
+[book]
+title = "evorule-system-rules 文档"
+description = "evorule 生态的系统元规则集:所有 evorule 系统 JSON 的 schema、版本、升级权威"
+authors = ["EvoRule 元则 Project"]
+language = "zh"
+src = "."
+
+[build]
+build-dir = "book"
+create-missing = true
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://gitee.com/evorule/evorule-system-rules"
+edit-url-template = "https://gitee.com/evorule/evorule-system-rules/edit/main/docs/{path}"
+site-url = "/evorule-system-rules/"
+mathjax-support = false
+
+[output.html.fold]
+enable = true
+level = 1
+
+[output.html.search]
+enable = true
+limit-results = 20
+teaser-word-count = 30
+use-boolean-and = true
+boost-title = 2
+boost-hierarchy = 1
+boost-paragraph = 1
+expand = true
+heading-split-level = 3

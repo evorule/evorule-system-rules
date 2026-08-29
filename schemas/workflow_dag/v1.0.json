@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/workflow_dag/v1.0.json",
+  "title": "evorule workflow_dag v1.0（已验证：对齐 evo-agent Workflow）",
+  "description": "DAG workflow 定义（对应 evo-agent/rules/workflows/*.json）。2026-08-27 用真实资产回归修订（原 D5 未验证草案作废）：body 对齐 evo-agent src/agent/workflow.rs 的 Workflow/WorkflowNode struct——nodes[] 内联 depends_on 隐式边表（非独立 edges 数组）、task/task_template 二选一、output_node 主输出。图模型提案（显式 edges + node.type 7 枚举）被真实结构否决。门卫约定：加载侧强制 node.id 与 agent_type ∈ [A-Za-z0-9_-]+（防模板占位符污染与路径穿越）、Kahn 环检测在执行期，本 schema 以 pattern 与之同构。",
+  "x_legal_authority_notice": "本 schema 由 EvoRule 团队维护,以 CC0 1.0 公共领域奉献(见 schemas/LICENSE-SCHEMAS.md);通过本 schema 校验或创作的 system JSON 内容 IP 归作者所有,evorule 不主张。详见 ../../LEGAL_NOTES.md 与 ../../docs/adr/scope-split-ip-model.md",
+  "allOf": [
+    { "$ref": "../_meta/v1.0.json" },
+    {
+      "type": "object",
+      "required": ["workflow_id", "nodes", "output_node"],
+      "properties": {
+        "kind": { "const": "workflow_dag" },
+        "workflow_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "工作流 id（用于日志/加载）"
+        },
+        "description": { "type": "string" },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/node" }
+        },
+        "output_node": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "输出节点 id：其结果作为整个工作流的返回值"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": ["id", "agent_type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "节点 id（工作流内唯一），被 depends_on / task_template 占位符 {id} / output_node 引用。标识符白名单防占位符污染。"
+        },
+        "agent_type": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "执行该节点的 agent 类型（agents/<agent_type>.json）。白名单防路径穿越。"
+        },
+        "task": {
+          "type": "string",
+          "description": "静态任务描述（与 task_template 二选一；同时提供时 task_template 优先）"
+        },
+        "task_template": {
+          "type": "string",
+          "description": "任务模板：可含 {node_id} 占位符，执行期被上游节点结果替换"
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": "依赖的节点 id 列表（隐式边表）；须全部完成后本节点才执行；引用不存在节点/自依赖在加载校验期拒绝，环在拓扑排序期拒绝"
+        }
+      }
+    }
+  }
+}

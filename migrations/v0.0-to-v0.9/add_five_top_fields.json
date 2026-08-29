@@ -1,0 +1,58 @@
+{
+  "$schema": "https://evorule.org/schemas/migration/v0.9.json",
+  "kind": "migration",
+  "id": "com.evorule.migration.v0_to_v0_9.add_five_top_fields",
+  "version": "0.9.0",
+  "from_version": "v0.0",
+  "to_version": "v0.9",
+  "metadata": {
+    "title": "v0 → v0.9 添加 5 顶层字段",
+    "description": "为旧 evorule JSON 添加 $schema / kind / id / version / metadata 字段(5 个固定顶层字段)。$schema URL 留待工具根据 kind 推导,id/created/updated 留待工具根据文件路径推导。",
+    "authors": ["mavis@evorulelab.com"],
+    "created": "2026-08-23",
+    "updated": "2026-08-23",
+    "tags": ["migration", "v0_0", "v0_9", "bootstrap"]
+  },
+  "transforms": [
+    {
+      "id": "M001",
+      "title": "添加 $schema 字段(由工具根据 kind 字段填充)",
+      "description": "规则:如果 $schema 字段不存在,设置 $schema = `https://evorule.org/schemas/<kind>/v0.9.json`,其中 <kind> 来自新加的 kind 字段",
+      "when": { "missing": "$schema" },
+      "then": { "set": "$schema = 'https://evorule.org/schemas/' + kind + '/v0.9.json'" }
+    },
+    {
+      "id": "M002",
+      "title": "添加 kind 字段(由工具根据文件上下文推导)",
+      "description": "工具规则:从文件路径或外部参数推导 kind。例:`core_eval.json` → `rule_set`,`service_registry.json` → `service_registry`,`agents/X.json` → `agent_def`,`workflows/X.json` → `workflow_dag`,`PITFALLS.json` → `knowledge`",
+      "when": { "missing": "kind" },
+      "then": { "set": "kind = '<derived-by-tool>'" }
+    },
+    {
+      "id": "M003",
+      "title": "添加 id 字段(由工具根据文件路径推导)",
+      "description": "工具规则:从仓库 org + 文件相对路径推导。例:`evorule/evorule-tcb/core_eval.json` → `com.evorule.tcb.core_eval`,`evo-agent/agents/researcher.json` → `com.evo-agent.agents.researcher`",
+      "when": { "missing": "id" },
+      "then": { "set": "id = '<derived-by-tool>'" }
+    },
+    {
+      "id": "M004",
+      "title": "添加 version 字段(默认 0.1.0)",
+      "when": { "missing": "version" },
+      "then": { "set": "version = '0.1.0'" }
+    },
+    {
+      "id": "M005",
+      "title": "添加 metadata 字段(由工具根据 git 提交信息和当前日期填充)",
+      "description": "工具规则:从 git log 第一个 commit 提取 created,从 HEAD 提取 updated,summary 提取 title",
+      "when": { "missing": "metadata" },
+      "then": { "set": "metadata = { title: '<derived>', created: '<derived>', updated: '<derived>' }" }
+    },
+    {
+      "id": "M006",
+      "title": "添加 authors 字段(从 git config user.email 推导)",
+      "when": { "missing": "metadata.authors" },
+      "then": { "set": "metadata.authors = ['<git-user-email>']" }
+    }
+  ]
+}

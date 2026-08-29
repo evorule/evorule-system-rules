@@ -1,0 +1,18 @@
+[package]
+name = "evorule-constitution"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+description = "evorule 宪法 jsonschema 校验组件——属地执法共享实现(见 docs/explanation/04-governance-scope.md 属地执法义务)"
+repository = "https://example.invalid/evorule-system-rules"
+
+[dependencies]
+serde_json = "1"
+jsonschema = "0.18"
+
+[dependencies.tracing]
+version = "0.1"
+optional = true
+
+[features]
+default = ["tracing"]

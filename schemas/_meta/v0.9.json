@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/_meta/v0.9.json",
+  "title": "evorule System JSON Meta v0.9",
+  "description": "所有 evorule 系统 JSON 共用的 5 顶层字段。其他 kind 的 schema 通过 allOf 引用本文件。",
+  "x_legal_authority_notice": "本 schema 由 EvoRule 团队维护,以 CC0 1.0 公共领域奉献(见 schemas/LICENSE-SCHEMAS.md);通过本 schema 校验或创作的 system JSON 内容 IP 归作者所有,evorule 不主张。详见 ../../LEGAL_NOTES.md 与 ../../docs/adr/scope-split-ip-model.md",
+  "type": "object",
+  "required": ["$schema", "kind", "id", "version", "metadata"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "description": "指向 evorule-system-rules 仓的具体 schema 文件 URL",
+      "pattern": "^https://evorule\\.org/schemas/[a-z_]+/v\\d+\\.\\d+\\.json$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "rule_set",
+        "agent_def",
+        "workflow_dag",
+        "service_registry",
+        "knowledge",
+        "migration"
+      ],
+      "description": "系统 JSON 的种类"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+      "description": "命名空间唯一 ID,推荐格式 <org>.<scope>.<name>,跨版本稳定",
+      "examples": [
+        "com.evorule.tcb.core_eval",
+        "com.acme.sales.validation"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[a-z0-9.-]+)?(\\+[a-z0-9.-]+)?$",
+      "description": "semver 内容版本(与 $schema 主版本正交)"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["title", "created", "updated"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "authors": {
+          "type": "array",
+          "items": { "type": "string", "format": "email" },
+          "minItems": 1
+        },
+        "created": { "type": "string", "format": "date" },
+        "updated": { "type": "string", "format": "date" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9_-]+$" },
+          "uniqueItems": true
+        },
+        "license": {
+          "type": "string",
+          "enum": ["Apache-2.0", "MIT", "BSD-3-Clause", "Proprietary", "Custom"]
+        },
+        "lifecycle": {
+          "type": "object",
+          "properties": {
+            "state": {
+              "enum": ["draft", "review", "active", "deprecated", "retired"]
+            },
+            "since": { "type": "string", "format": "date" }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "enum": ["manual", "generated", "derived", "imported"]
+            },
+            "derived_from": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "governance": {
+          "type": "object",
+          "properties": {
+            "approvers": {
+              "type": "array",
+              "items": { "type": "string", "format": "email" }
+            },
+            "reviewers": {
+              "type": "array",
+              "items": { "type": "string", "format": "email" }
+            },
+            "approval_date": { "type": "string", "format": "date" }
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "version"],
+            "properties": {
+              "id": { "type": "string" },
+              "version": {
+                "type": "string",
+                "pattern": "^>=?\\d+\\.\\d+\\.\\d+"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

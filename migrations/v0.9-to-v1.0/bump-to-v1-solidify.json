@@ -1,0 +1,36 @@
+{
+  "$schema": "https://evorule.org/schemas/migration/v1.0.json",
+  "kind": "migration",
+  "id": "com.evorule.migration.v0_9_to_v1_0_bump",
+  "version": "1.0.0",
+  "from_version": "v0.9",
+  "to_version": "v1.0",
+  "metadata": {
+    "title": "v0.9 → v1.0 固化升级（引擎原生 transform）",
+    "description": "调用方把目标文档作为 __exec__.payload 加载，按阶段合成指令触发：(1) {type:migrate, params:{schema_uri}} —— $schema 机械升级为 https://evorule.org/schemas/<kind>/v1.0.json（URL 由工具按 kind 拼好传入，引擎不做字符串拼接）；(2) service_registry 的 D2 sidecar 拆分与 rule_set 的 rules[]→transform[] 语义翻译不可用数据级 transform 表达——前者是文件系统操作，后者需语义等价转译，均属工具阶段（rule_translate/upgrade CLI）职责，迁移完成后须经 schema 门禁复核（transform 上限 64、路径复数 __io_results__ 等）。metadata 中 title/created/updated 在 v1.0 已不强制(D7)，无需动作。",
+    "authors": ["mavis@evorulelab.com"],
+    "created": "2026-08-27",
+    "updated": "2026-08-27",
+    "tags": ["migration", "v0_9", "v1_0", "solidify"],
+    "license": "AGPL-3.0-or-later"
+  },
+  "transform": [
+    {
+      "type": "branch",
+      "params": {
+        "domain": { "type": "instruction", "instruction_type": "migrate" },
+        "on_true": [
+          {
+            "type": "set",
+            "params": {
+              "attr": "__exec__.payload.$schema",
+              "operation": "set",
+              "value": "__exec__.instruction.params.schema_uri"
+            }
+          }
+        ],
+        "on_false": []
+      }
+    }
+  ]
+}

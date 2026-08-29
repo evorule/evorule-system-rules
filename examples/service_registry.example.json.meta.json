@@ -1,0 +1,18 @@
+{
+  "$schema": "https://evorule.org/schemas/service_registry/v1.0.json",
+  "kind": "service_registry",
+  "id": "com.example.services.core",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "核心服务注册示例（sidecar 标注）",
+    "description": "service_registry 的治理标注层存放在 sidecar（D2）：主体 service_registry.example.json 保持纯对象映射零改动，本文件提供 $schema/kind/id/version/metadata。校验/审计时合并本 sidecar 标注 + 主体对象映射后按 service_registry/v1.0.json 校验。",
+    "authors": ["dave@example.com"],
+    "created": "2026-08-23",
+    "updated": "2026-08-23",
+    "tags": ["example", "services"],
+    "license": "AGPL-3.0-or-later"
+  },
+  "body": "service_registry.example.json",
+  "body_format": "object-mapping",
+  "body_note": "引用主体文件；主体为顶层对象映射 {svc_name: {url, method, headers, timeout_ms}}。禁止在主体文件直接加本 sidecar 的 5 个标注字段——engine 加载器会把它们当服务名解析。"
+}
