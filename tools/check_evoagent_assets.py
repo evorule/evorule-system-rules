@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""M7-B 预检：用修订后的 v1.0 schema 校验 evo-agent 真实资产。
+"""M7-B 预检：用修订后的 v1.0 schema 校验 evo-agent / evorule-agent 真实资产。
 
-真实资产无壳——按 quick-start 路径，把 5 标注字段作为独立标注层合成
-（等价于 sidecar 合并视图），再走 jsonschema 全量校验。
-此脚本是 B1/B2 接入前的真值回归：三个 agents/*.json + 一个 workflow。
+evo-agent 的 agents/*.json + workflow 为裸文档——按 quick-start 路径，把
+5 标注字段作为独立标注层合成（等价于 sidecar 合并视图），再走 jsonschema
+全量校验。
+evorule-agent 的 core_eval/agent_core_eval.json 已按 C7 换壳为 rule_set
+v1.0 完整壳（参照 evo-agent agent_constitution.json 范式），直接全量校验。
+此脚本是 B1/B2 接入前的真值回归。
 """
 import json
 import sys
@@ -15,6 +18,7 @@ from referencing import Registry, Resource
 
 REPO = Path(__file__).resolve().parent.parent
 EA = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(r"D:\evo-agent")
+ERA = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(r"D:\evorule-agent")
 
 
 def load_registry() -> Registry:
@@ -42,25 +46,30 @@ def shelved(doc: dict, schema_url: str, kid: str, pid: str) -> dict:
 
 def main() -> int:
     reg = load_registry()
+    # (路径, kind, 治理 id, schema) —— 裸文档自动合成壳; 已带 $schema+kind 的直接校验
     cases = [
-        ("agents/general.json", "agent_def", "com.evoagent.agent.general", "schemas/agent_def/v1.0.json"),
-        ("agents/researcher.json", "agent_def", "com.evoagent.agent.researcher", "schemas/agent_def/v1.0.json"),
-        ("agents/rule-copilot.json", "agent_def", "com.evoagent.agent.rule_copilot", "schemas/agent_def/v1.0.json"),
-        ("rules/workflows/research_and_write.json", "workflow_dag", "com.evoagent.workflow.research_and_write", "schemas/workflow_dag/v1.0.json"),
+        (EA / "agents/general.json", "agent_def", "com.evoagent.agent.general", "schemas/agent_def/v1.0.json"),
+        (EA / "agents/researcher.json", "agent_def", "com.evoagent.agent.researcher", "schemas/agent_def/v1.0.json"),
+        (EA / "agents/rule-copilot.json", "agent_def", "com.evoagent.agent.rule_copilot", "schemas/agent_def/v1.0.json"),
+        (EA / "rules/workflows/research_and_write.json", "workflow_dag", "com.evoagent.workflow.research_and_write", "schemas/workflow_dag/v1.0.json"),
+        (ERA / "core_eval/agent_core_eval.json", "rule_set", "app.evorule.agent", "schemas/rule_set/v1.0.json"),
     ]
     failures = 0
-    for rel, kid, pid, schema_rel in cases:
-        raw = json.loads((EA / rel).read_text(encoding="utf-8-sig"))
-        doc = shelved(raw, f"https://evorule.org/schemas/{kid}/v1.0.json", kid, pid)
+    for path, kid, pid, schema_rel in cases:
+        raw = json.loads(path.read_text(encoding="utf-8-sig"))
+        if "$schema" in raw and "kind" in raw:
+            doc = raw  # C7 固化壳资产: 完整 5 标注字段已在文档内
+        else:
+            doc = shelved(raw, f"https://evorule.org/schemas/{kid}/v1.0.json", kid, pid)
         schema = json.loads((REPO / schema_rel).read_text(encoding="utf-8-sig"))
         errs = sorted(jsonschema.Draft202012Validator(schema, registry=reg).iter_errors(doc), key=lambda e: list(e.path))
         if errs:
             failures += 1
-            print(f"[FAIL] {rel}")
+            print(f"[FAIL] {path}")
             for e in errs[:5]:
                 print(f"   - {'/'.join(map(str, e.path)) or '<root>'}: {e.message[:160]}")
         else:
-            print(f"[OK]   {rel}")
+            print(f"[OK]   {path}")
     print()
     print("RESULT:", "ALL PASS" if failures == 0 else f"{failures} FAILURES")
     return 1 if failures else 0
