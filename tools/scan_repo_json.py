@@ -8,8 +8,11 @@
 判定规则：
   1. 带 `https://evorule.org/schemas/` $schema 的文件 → 经 evorule-migrate validate
      做全量 schema 校验；
-  2. 不带壳的文件 → 对照豁免清单（EXEMPT_PATTERNS，路径片段匹配）；
-  3. 既无壳又不在豁免清单 → 违规，exit 1。
+  2. 带"待迁移映射"私造 $schema 的文件 → [MAP] 登记（WARN 级,不 FAIL）:
+     私造 DSL 迁移到正式 kind 需执行语义变更（另立小方案）,迁移前在此登记,
+     防止私造 URI 无声扩散;
+  3. 不带壳的文件 → 对照豁免清单（EXEMPT_PATTERNS，路径片段匹配）；
+  4. 其余 → 违规，exit 1。
 
 用法：
     python tools/scan_repo_json.py --repo D:/evorule
@@ -37,6 +40,20 @@ EXEMPT_PATTERNS = [
     "acceptance/",           # 验收夹具（随测试套自管）
 ]
 
+# 待迁移映射登记表（C6）：私造 $schema URI → 正式 kind 的迁移承诺。
+# 背景：evorule-application demo 规则是私造 DSL（trigger/condition/action,
+# 由 application 仓自有解释器执行），与引擎原生 transform 不同构；迁移为
+# rule_set v1.0 需执行语义变更，另立小方案。迁移完成前在此登记映射关系,
+# 扫描以 [MAP] WARN 提示（不 FAIL）,但 URI 不得新增扩散（不在表内的
+# 私造 URI 照常判违规）。
+PENDING_MIGRATION_URIS = {
+    "https://evorule.com/schema/v1/rule.json": {
+        "target_kind": "rule_set",
+        "scope": "evorule-application demo (agent-guard / compliance-gate)",
+        "note": "私造 DSL, 待执行语义变更小方案后迁移 rule_set v1.0",
+    },
+}
+
 
 def is_exempt(rel_path: str) -> bool:
     p = rel_path.replace("\\", "/")
@@ -57,6 +74,7 @@ def main() -> int:
     violations: list[str] = []
     shelled_ok = 0
     exempted = 0
+    mapped = 0
 
     for root, dirs, files in os.walk(repo):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
@@ -89,6 +107,10 @@ def main() -> int:
                     print(f"  [OK ] {rel} → {schema_url.rsplit('/', 1)[-1]}")
                 else:
                     violations.append(f"{rel}: 有壳但校验失败\n{r.stdout}{r.stderr}")
+            elif isinstance(schema_url, str) and schema_url in PENDING_MIGRATION_URIS:
+                mapped += 1
+                info = PENDING_MIGRATION_URIS[schema_url]
+                print(f"  [MAP] {rel} → 待迁移 {info['target_kind']} ({info['note']})")
             elif is_exempt(rel):
                 exempted += 1
                 print(f"  [EXM] {rel} (豁免)")
@@ -96,7 +118,7 @@ def main() -> int:
                 violations.append(f"{rel}: 无 $schema 且不在豁免清单——新进根仓的系统 JSON 必须带壳或先在 governance-scope 豁免表登记")
 
     print()
-    print(f"带壳且校验通过: {shelled_ok}  |  豁免: {exempted}  |  违规: {len(violations)}")
+    print(f"带壳且校验通过: {shelled_ok}  |  豁免: {exempted}  |  待迁移映射: {mapped}  |  违规: {len(violations)}")
     if violations:
         print("\n[FAIL] 门禁违规:")
         for v in violations:
