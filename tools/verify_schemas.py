@@ -344,6 +344,53 @@ def main():
     ]}}]),
         rs_schema, registry, "负向：while_loop 缺 body（指令层结构）→ 期望被拒", False)
 
+    # ===== knowledge 双形态（Q12 数据资产化：文档条目 + 数据条目互斥契约）=====
+    # 权威源：schemas/knowledge/v1.0.json（2026-08-30 升格重设计）。
+    # 正向=期望通过（防假阳性）；负向=期望被拒（防假阴性，拦截二义条目）。
+    print("\n== knowledge 双形态（Q12 数据资产化）==")
+
+    def kn(entries):
+        return {
+            "$schema": "https://evorule.org/schemas/knowledge/v1.0.json",
+            "kind": "knowledge", "id": "com.evorule.neg.kn", "version": "1.0.0",
+            "metadata": {"title": "knowledge 专项"},
+            "entries": entries,
+        }
+
+    kn_schema = os.path.join(SCHEMAS_DIR, "knowledge", "v1.0.json")
+
+    # 正向：文档条目（content）
+    all_ok &= case(kn([{"id": "P001", "content": "知识正文。", "severity": "info"}]),
+                   kn_schema, registry, "正向：文档条目 content → 期望通过", True)
+
+    # 正向：数据条目（payload + schema_ref，payload 任意 JSON 含 null/标量）
+    all_ok &= case(kn([{"id": "D001", "payload": {"k": [1, 2.5, None]}, "schema_ref": "https://rpsm.evorule.org/schemas/scenario/v1.0.json"}]),
+                   kn_schema, registry, "正向：数据条目 payload+schema_ref → 期望通过", True)
+
+    # 正向：双形态混排
+    all_ok &= case(kn([{"id": "P001", "content": "文档。"}, {"id": "D001", "payload": {"x": 1}, "schema_ref": "uri:x"}]),
+                   kn_schema, registry, "正向：文档+数据混排 → 期望通过", True)
+
+    # 负向：content 与 payload 共存（二义）→ 期望被拒
+    all_ok &= case(kn([{"id": "X001", "content": "文档。", "payload": {"x": 1}, "schema_ref": "uri:x"}]),
+                   kn_schema, registry, "负向：content+payload 共存（二义）→ 期望被拒", False)
+
+    # 负向：content 与 schema_ref 共存（无 payload 的悬空引用）→ 期望被拒
+    all_ok &= case(kn([{"id": "X002", "content": "文档。", "schema_ref": "uri:x"}]),
+                   kn_schema, registry, "负向：content+schema_ref 悬空引用 → 期望被拒", False)
+
+    # 负向：数据条目缺 schema_ref（D3 强校验：无领域 schema 的 payload 不得入库）→ 期望被拒
+    all_ok &= case(kn([{"id": "X003", "payload": {"x": 1}}]),
+                   kn_schema, registry, "负向：payload 缺 schema_ref（D3 强校验）→ 期望被拒", False)
+
+    # 负向：数据条目缺 payload（悬空 schema_ref）→ 期望被拒
+    all_ok &= case(kn([{"id": "X004", "schema_ref": "uri:x"}]),
+                   kn_schema, registry, "负向：schema_ref 缺 payload → 期望被拒", False)
+
+    # 负向：既无 content 也无 payload（空条目）→ 期望被拒
+    all_ok &= case(kn([{"id": "X005", "title": "空条目"}]),
+                   kn_schema, registry, "负向：无 content 无 payload（空条目）→ 期望被拒", False)
+
     print("\n== 结论 ==")
     print("ALL OK" if all_ok else "HAS FAILURES")
     return 0 if all_ok else 1

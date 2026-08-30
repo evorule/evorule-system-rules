@@ -4,12 +4,12 @@
   "id": "com.example.knowledge.evorule_pitfalls",
   "version": "1.0.0",
   "metadata": {
-    "title": "evorule 坑点知识库示例（未验证草案）",
-    "description": "展示 evorule-system-rules v1.0 knowledge 格式。⚠️ 本 kind 为未验证草案（D5）；且注意 D:\\evorule-server\\docs\\PITFALLS.json 自身部分条目已过时（valid_domain_types 缺 has_fields、valid_meta_instructions 缺 collect/merge、P09/P17/P18 与现行 v0.3.1 引擎不一致），引用时需以 records/70 事实源清单为准。",
+    "title": "evorule 知识数据资产示例（文档 + 数据双形态）",
+    "description": "展示 evorule-system-rules v1.0 knowledge 双形态：文档知识条目（content）与数据资产条目（payload+schema_ref）。数据形态示例引用 rpsm 物理仿真场景 schema（领域仓资产，schema_ref 仅引用不内嵌）。注意 D:\\evorule-server\\docs\\PITFALLS.json 自身部分条目已过时（valid_domain_types 缺 has_fields、valid_meta_instructions 缺 collect/merge、P09/P17/P18 与现行 v0.3.1 引擎不一致），引用时需以 records/70 事实源清单为准；PITFALLS.json 本身属内部工具豁免文件，不入 knowledge 治理链。",
     "authors": ["eve@example.com"],
     "created": "2026-08-23",
-    "updated": "2026-08-23",
-    "tags": ["example", "pitfalls"],
+    "updated": "2026-08-30",
+    "tags": ["example", "pitfalls", "data-asset"],
     "license": "AGPL-3.0-or-later"
   },
   "entries": [
@@ -35,6 +35,31 @@
       "content": "evorule-tcb 的 JsonValue 无 Float 变体，外部 JSON 浮点数转成字符串。精度判断（residual < tolerance）必须在外部服务里做并返回布尔标志，规则只判断布尔结果。lt 只支持 Integer 比较。",
       "category": "tcb_limit",
       "severity": "error",
+      "related": []
+    },
+    {
+      "id": "D001",
+      "title": "rpsm 弹簧单粒子场景（数据资产形态示例）",
+      "category": "physics_scenario",
+      "payload": {
+        "scenario_id": "spring-single-particle",
+        "gravity": [0.0, -9.81, 0.0],
+        "restitution": 1.0,
+        "bodies": [
+          {
+            "id": "particle-1",
+            "mass": 1.0,
+            "position": [0.0, 0.0, 0.0],
+            "velocity": [1.0, 0.0, 0.0]
+          }
+        ],
+        "spring": {
+          "anchor_x": 0.0,
+          "stiffness_rule": "-9.81 * x",
+          "init_x": 1.0
+        }
+      },
+      "schema_ref": "https://rpsm.evorule.org/schemas/scenario/v1.0.json",
       "related": []
     }
   ]
