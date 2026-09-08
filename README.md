@@ -180,6 +180,7 @@ evorule 团队 + 受邀贡献者。提 PR 走标准 review 流程。
 - 非营利 / 开源免费商业许可:[FREE_COMMERCIAL_LICENSE.md](./FREE_COMMERCIAL_LICENSE.md)
 - 商标使用政策:[TRADEMARK.md](./TRADEMARK.md)
 - 第三方归属:[NOTICE.md](./NOTICE.md)
+- 商业许可 / FCL 资格咨询: evorulelab@gmail.com
 - 本仓特定补充(双 scope IP 分离):[LEGAL_NOTES.md](./LEGAL_NOTES.md)
 
 > **与 `core_eval.json` 的关系**:主仓(evorule)内 `evorule-tcb` crate 的 `core_eval.json` 因其"解释器规范"角色采用 **CC0 1.0 公共领域**;本仓 `schemas/` 因其"格式规范"角色同理采用 CC0——**规范层资产 CC0、实现层资产 AGPL+商业**的分层 IP 模型。`evorule-system-rules` 仓定位为生态**治理层**(所有 evorule 系统 JSON 必须受其格式治理),治理权威来自治理模型与流程约束,不来自许可证限制。
