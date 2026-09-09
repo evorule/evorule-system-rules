@@ -22,9 +22,11 @@
 //! ## 最小接入示例
 //!
 //! ```no_run
+//! use serde_json::json;
 //! use evorule_constitution::Constitution;
 //!
-//! let c = Constitution::open();
+//! let c = Constitution::new();
+//! let doc = json!({ "nodes": [] });
 //! match c.validate("agent_def", &doc) {
 //!     Ok(()) => { /* 通过(或该 kind 处于 Fallback 降级) */ }
 //!     Err(violations) => eprintln!("constitution violations: {violations:?}"),
