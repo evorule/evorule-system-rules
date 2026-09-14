@@ -199,7 +199,7 @@ def main():
     }
     all_ok &= case(bad_when, rs_schema, registry, "正向：all([]) 空 inner 兜底（应为合法）", True)
 
-    # --- v1.0 固化专项（对照 TCB 源码：set.value / merge tool_results / __ 前缀）---
+    # --- v1.0 固化专项（对照 TCB 源码：set.value / __ 前缀 / 退役原语拒载）---
     def rs(transform):
         return {
             "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
@@ -212,18 +212,17 @@ def main():
     all_ok &= case(rs([{"type": "set", "params": {"attr": "x", "operation": "set"}}]),
                    rs_schema, registry, "负向：set 缺 value（引擎 MissingField）→ 期望被拒", False)
 
-    # merge 用 tool_results（复数，多工具扇出）→ 引擎合法（exec_merge 优先读 tool_results）→ 应通过
+    # collect/merge 已退役（69 号清理计划 2026-09-14）→ schema 枚举移除 → 应被拒
     all_ok &= case(rs([{"type": "merge", "params": {
         "messages": "__exec__.payload.llm_response.messages",
         "tool_results": "__exec__.payload.service_results",
         "next_instruction": {"type": "call_external", "params": {"messages": "{{messages}}"}}}}]),
-        rs_schema, registry, "正向：merge 用 tool_results 复数（引擎合法）→ 期望通过", True)
+        rs_schema, registry, "负向：merge 已退役（69 号，枚举移除）→ 期望被拒", False)
 
-    # merge 既无 tool_result 也无 tool_results → 引擎 MissingField → 应被拒
     all_ok &= case(rs([{"type": "merge", "params": {
         "messages": "__exec__.payload.llm_response.messages",
         "next_instruction": {"type": "noop"}}}]),
-        rs_schema, registry, "负向：merge 无 tool_result 且无 tool_results → 期望被拒", False)
+        rs_schema, registry, "负向：merge 已退役（69 号，枚举移除）→ 期望被拒", False)
 
     # branch.domain 字符串非 __ 前缀 → resolve_path_or_literal 当字面量 → 运行时报错 → 应被拒
     all_ok &= case(rs([{"type": "branch", "params": {
@@ -234,12 +233,12 @@ def main():
     all_ok &= case(rs([{"type": "push", "params": {"instructions": ["payload.then"]}}]),
         rs_schema, registry, "负向：push.instructions 内无 __ 前缀字符串 → 期望被拒", False)
 
-    # collect 带 after（引擎 exec_collect 末尾支持）→ 应通过
+    # collect 已退役（69 号清理计划 2026-09-14）→ schema 枚举移除 → 应被拒
     all_ok &= case(rs([{"type": "collect", "params": {
         "from": "__exec__.payload.llm_response.tool_calls",
         "each": {"type": "noop"},
         "after": {"type": "noop"}}}]),
-        rs_schema, registry, "正向：collect 带 after 可选参数 → 期望通过", True)
+        rs_schema, registry, "负向：collect 已退役（69 号，枚举移除）→ 期望被拒", False)
 
     # ===== Opt1 + Opt2：路径语法 + __io_results__ 复数强制（yuanze-demos 实证）=====
     # 权威源：evorule-tcb/src/path.rs（Opt1）、P1-03 复数协议（Opt2）。
@@ -301,10 +300,14 @@ def main():
         rs_schema, registry, "负向：io_request args 路径尾部空段 → 期望被拒", False)
 
     # --- Opt1 正向：合法特殊路径（$ / 索引 / 纯索引段 / 复数 I/O 结果）---
-    for good in ["__exec__.payload.$schema", "data[0]", "data.[0]", "payload.a.b[2].c",
+    # （UV-146 方案 a：set.attr 禁 payload. 前缀——相对路径或 __exec__.payload. 显式全形式）
+    for good in ["__exec__.payload.$schema", "data[0]", "data.[0]", "a.b[2].c",
                  "__exec__.payload.__io_results__.call_service"]:
         all_ok &= case(rs([{"type": "set", "params": {"attr": good, "operation": "set", "value": 1}}]),
                        rs_schema, registry, f"正向：set.attr 合法路径 {good!r} → 期望通过", True)
+    # --- Opt1 负向：payload. 前缀双重嵌套写歪（UV-146 方案 a，payload_attr_path 拒载）---
+    all_ok &= case(rs([{"type": "set", "params": {"attr": "payload.a.b[2].c", "operation": "set", "value": 1}}]),
+                   rs_schema, registry, "负向：set.attr payload. 前缀双重嵌套（UV-146）→ 期望被拒", False)
 
     # --- Opt2 显式：单数 vs 复数 I/O 结果字段 ---
     all_ok &= case(rs([{"type": "branch", "params": {
