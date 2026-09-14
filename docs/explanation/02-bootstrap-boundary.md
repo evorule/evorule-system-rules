@@ -36,7 +36,7 @@ evorule 生态的元层(从底到顶):
 | L1 | `$schema` v1.0 schema 文件本身 | ❌ | 人类冻结,patch only | git + CI |
 | L2 | 6 个 kind 的 schema 文件 | ❌ | 人类 + 评审 | git + CI |
 | L3 | 现有 system JSON | ✅ | evorule 启动期校验 | evorule-migrate |
-| L4 | 用户业务规则 | ✅ | evorule-rule 平台 | evorule-rule |
+| L4 | 项目方业务规则 | ✅ | evorule-rule 平台 | evorule-rule |
 | L5 | migration 规则 | ✅ | evorule 启动期校验 | evorule-migrate |
 
 ### 终止条件
@@ -165,7 +165,7 @@ evorule 生态的元层(从底到顶):
 
 ### 立场
 
-- **不禁止**——这是用户的业务能力(AI 生成规则)
+- **不禁止**——这是项目方的业务能力(AI 生成规则)
 - **不鼓励**——生成出来的规则没有经过人类治理,质量不可控
 - **必须标记**——生成的规则必须标 `metadata.provenance.source = "generated"`
 - **必须审核**——`lifecycle.state = "draft"`,等人类批准

@@ -63,7 +63,7 @@
 - v1.0 schema(冻结点)
 - migration `v0.9-to-v1.0/` 规则
 - evorule-rule v1.0 同步发布(主版本对齐)
-- 至少 1 个用户业务规则接入 evorule-rule 平台
+- 至少 1 个项目方业务规则接入 evorule-rule 平台
 
 **发版动作**:
 - [ ] 整合 v0.9 反馈,起草 v1.0
@@ -86,7 +86,7 @@
 **发版动作**:
 - [ ] 发布 `evorule-migrate` 到 PyPI
 - [ ] evorule / evorule-server / evo-agent / evorule-rule 全部拒绝 v0.x 加载
-- [ ] 启动错误信息提示用户用 `evorule-migrate` 升级到 v1.0
+- [ ] 启动错误信息提示项目方用 `evorule-migrate` 升级到 v1.0
 - [ ] 旧 v0.x tag 标记为 deprecated
 - [ ] CHANGELOG 公告 v0.x EOL
 
@@ -122,16 +122,16 @@
 
 不允许从 `v0.0` 直接跳到 `v1.0`,即使技术上可行:
 - 跳过关键 migration 可能丢字段
-- 工具强制逐级(用户显式串)
+- 工具强制逐级(项目方显式串)
 
 ## 紧急 hotfix
 
 如果是 critical bug(例:某个字段定义错导致所有 system JSON 加载失败):
 
-1. 评估严重性:是否影响所有 evorule 用户?
+1. 评估严重性:是否影响所有 evorule 项目方?
 2. 是 → 走 hotfix 分支,直接打 `v0.9.1` patch 版本
 3. 在 CHANGELOG 标 `[HOTFIX]`
-4. 通知所有 evorule 团队 + 用户
+4. 通知所有 evorule 团队 + 项目方
 
 **不允许**绕过 v1.0 冻结承诺(冻结后任何破坏性改动 = v2.0)。
 

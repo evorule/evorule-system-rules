@@ -2,7 +2,7 @@
 
 [介绍](introduction.md)
 
-# 用户指南
+# 项目方指南
 
 - [教程](tutorial/README.md)
   - [01 快速开始:校验你的第一个 system JSON](tutorial/01-quickstart-validate.md)

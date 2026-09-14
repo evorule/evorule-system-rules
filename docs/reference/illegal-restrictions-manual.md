@@ -11,14 +11,14 @@
 
 ## 0. 一句话
 
-> evorule 有两层语言，不是一层：**指令层**是用户业务规则的语言，**元指令层**是引擎宪法（transform 规则）的语言。凡在这两层之外发明结构、或把一层当另一层，规则必然"跑不起来"。TCB 不设防：违反宪法→报错（Error）；符合宪法但语义错→照常执行（由上层负责）。
+> evorule 有两层语言，不是一层：**指令层**是项目方业务规则的语言，**元指令层**是引擎宪法（transform 规则）的语言。凡在这两层之外发明结构、或把一层当另一层，规则必然"跑不起来"。TCB 不设防：违反宪法→报错（Error）；符合宪法但语义错→照常执行（由上层负责）。
 
 ## 1. 双层语言坐标（必读）
 
 | | 指令层（Instruction Layer） | 元指令层（Meta-Instruction Layer） |
 |---|---|---|
-| 别称 | 用户业务指令 | transform 规则类型 |
-| 语言 | `increment / decrement / set / sequence / conditional / while_loop / call_external / call_service / noop` | `branch / set / push / io_request / collect / merge`（仅 6 种） |
+| 别称 | 项目方业务指令 | transform 规则类型 |
+| 语言 | `increment / decrement / set / sequence / conditional / while_loop / call_external / call_service / noop` | `branch / set / push / io_request / enforce`（仅 5 种；`collect`/`merge` 已于 v0.6.0 退役，多轮编排由应用层 runner 实现） |
 | 权威源 | core_eval.json 的 `instruction` 域匹配目标 | `executor.rs` dispatch（F-01） |
 | 运行形态 | 作为 `__exec__.instruction` 流经引擎 | 作为 `transform[]` 中的规则 |
 | 作用 | 表达"业务要做什么" | 表达"引擎如何反应/执行" |
@@ -40,7 +40,7 @@
 
 | 禁区 | 正确写法 | 依据 |
 |---|---|---|
-| 指令层类型（`increment`/`noop`/`decrement`/`conditional`/`while_loop`/`sequence`）不得当作 transform 类型 | transform 只有 6 种元指令；指令层类型只能出现在指令序列 / `instruction` 域 | P0-01 |
+| 指令层类型（`increment`/`noop`/`decrement`/`conditional`/`while_loop`/`sequence`）不得当作 transform 类型 | transform 只有 5 种元指令；指令层类型只能出现在指令序列 / `instruction` 域 | P0-01 |
 | 元指令层类型不得当作指令层 | 算术更新走 `increment`/`decrement` 指令 + 元指令 `set operation=add/sub` | 双层语言 |
 
 ### 2.3 禁止语义假设
@@ -59,7 +59,7 @@
 
 | # | 事实 | 权威源（唯一） |
 |---|---|---|
-| F-01 | 元指令类型（6） | `evorule-tcb/src/executor.rs` dispatch（branch/set/push/io_request/collect/merge） |
+| F-01 | 元指令类型（5） | `evorule-tcb/src/executor.rs` dispatch（branch/set/push/io_request/enforce；collect/merge 已于 v0.6.0 退役） |
 | F-02 | 域类型（7 基础） | `evorule-tcb/src/domain.rs`（eq/lt/exists/instruction/all/not/has_fields） |
 | F-03 | I/O 结果路径 | reactor 注入 **`__io_results__`**（复数） |
 | F-04 | 路径语法 | `evorule-tcb/src/path.rs` |
@@ -75,7 +75,8 @@
 
 ```
 你是 evorule 规则设计助手，必须遵守以下约束：
-1. transform 类型只有 6 种：branch / set / push / io_request / collect / merge。
+1. transform 类型只有 5 种：branch / set / push / io_request / enforce
+   （collect / merge 已于 v0.6.0 退役，多轮编排由应用层 runner 实现，禁止再生成）。
    禁止把 increment / noop / decrement / conditional / while_loop / sequence 等
    指令层类型当作 transform 类型（它们只能出现在指令序列或 instruction 域）。
 2. 域嵌套一律用 inner；禁止 domain / domains 字段。
@@ -92,7 +93,7 @@
 
 | 声明 | 命令（工作目录） | 期望输出 |
 |---|---|---|
-| 6 种元指令四处白名单一致（TCB↔schema↔governance↔CLI） | `python tools/check_whitelist_sync.py`（`d:\evorule-system-rules`） | `[PASS] 四处白名单一致（6 种元指令…）` |
+| 元指令白名单对齐（TCB dispatch 5 种 = schema enum；governance 公开白名单 4 种 = dispatch − enforce；CLI 引用 SSOT） | `python tools/check_whitelist_sync.py`（`d:\evorule-system-rules`） | `[PASS] 白名单对齐（dispatch 5 种: branch, enforce, io_request, push, set；公开白名单 4 种；CLI 引用 SSOT）` |
 | 禁区负向用例全部被 schema 拒（not.domain / increment 混层 / set 缺 value / 非 `__` 路径等） | `python _verify_schemas.py`（`d:\evorule-system-rules`） | 全部 `[PASS]` 且进程退出码 0（`ALL OK`） |
 | 真实规则文件通过 schema（core_eval / 10_role13_demo / yuanze / service_registry 合并视图） | 同上 | 正向用例全部 `[PASS]` |
 | rule_translate 输出闸拒绝非法产物 | `cargo test -p evorule-workspace`（`d:\evorule-server`） | `schema_gate_rejects_unknown_op`、`schema_gate_rejects_invalid_set_operation` 通过 |

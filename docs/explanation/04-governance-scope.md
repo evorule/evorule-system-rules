@@ -59,7 +59,7 @@
 | evorule 核心仓(evorule/evorule-tcb/governance 等) | 豁免本义务——代偿机制更强:TCB 运行期严格拒绝(未知指令当场拒收)承诺执行语义正确性,资产级发布审批(core_eval 流程)承诺来源正确性;两者合起来比 schema 预检更硬。**core 内部件因此恪守最小化**:governance 只做元指令白名单检查(审计链本职),刻意不承担 schema 全量校验——把重依赖与外部数据资产挡在核心仓之外是设计而非欠缺 |
 | evorule-server | ✅ 已达标(API 校验点 + hot_reload 逐文件门禁 + 副本同步守卫) |
 | evo-agent | ✅ 已达标(`src/agent/constitution.rs`,M7 落地) |
-| evorule-governance | ✅ 设计如此(见上表核心仓行):仅做元指令白名单,不补 schema 校验——曾误列为"半位缺口",2026-08-27 经用户澄清为刻意设计并更正 |
+| evorule-governance | ✅ 设计如此(见上表核心仓行):仅做元指令白名单,不补 schema 校验——曾误列为"半位缺口",2026-08-27 经项目方澄清为刻意设计并更正 |
 | 后续新应用(evorule-rule、白标实例) | 出生即带:项目模板内含共享 crate 依赖与最小接入 |
 | 运行宪法的属地分发(T8,2026-08-27) | 确立模式:核心仓 `core_eval.json` 仅承载引擎自评最小集(v0.4.0,原子+控制流+兜底);ReAct 等**应用剧本由消费方自持**——evo-agent 自带 `assets/agent_constitution.json`(app.evoagent.agent),示例应用自带 assets 副本,部署侧经 `paths.core_eval`/`--core_eval` 指向自有宪法。消费方测试夹具同样遵守本义务(不跨仓引用他仓资产) |
 

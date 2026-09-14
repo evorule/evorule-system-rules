@@ -20,11 +20,11 @@ evorule-rule 在 evorule 生态中扮演两个角色:
                     │  • Tier 1 的下游(自己 schema  │
                     │    必须对齐)                   │
                     │  • Tier 3 的管理者(用 Tier 1 │
-                    │    治理用户业务规则)            │
+                    │    治理项目方业务规则)          │
                     └──────────────┬───────────────┘
                                    │ 管理
                     ┌──────────────┴───────────────┐
-                    │  用户业务规则                  │  (Tier 3)
+                    │  项目方业务规则                │  (Tier 3)
                     └─────────────────────────────┘
 ```
 
@@ -32,7 +32,7 @@ evorule-rule 在 evorule 生态中扮演两个角色:
 - evorule-rule **不能自由发挥**自定义 schema
 - evorule-rule 的所有字段格式必须以 Tier 1 `$schema` 为准
 - evorule-rule 升级必须跟随 Tier 1 `$schema` 主版本
-- 用户通过 evorule-rule 提交的业务规则,evorule-rule 负责校验它们符合 Tier 1
+- 项目方通过 evorule-rule 提交的业务规则,evorule-rule 负责校验它们符合 Tier 1
 
 ## 字段如何用 Tier 1 表达
 
@@ -87,7 +87,7 @@ evorule-rule 现有的治理字段(Governance / Provenance / Lifecycle / Depende
 
 ### 行为对齐(动态)
 
-- evorule-rule 校验用户规则时,用 Tier 1 的 JSON Schema
+- evorule-rule 校验项目方规则时,用 Tier 1 的 JSON Schema
 - evorule-rule 触发迁移时,跑 Tier 1 的 migration 规则
 - evorule-rule **不允许**"绕过" Tier 1 直接加载未校验的 JSON
 
@@ -109,9 +109,9 @@ evorule-rule 启动时:
 
 ### 运行期校验
 
-evorule-rule 处理用户规则时:
+evorule-rule 处理项目方规则时:
 
-1. 读用户规则的 `$schema` 字段
+1. 读项目方规则的 `$schema` 字段
 2. 与 Tier 1 当前 schema 比对
 3. 不匹配 = 走 migration(自动)或拒绝(配置决定)
 4. migration 失败 = 明确报错(指出哪个字段不兼容)
@@ -129,7 +129,7 @@ evorule-rule 升级时:
 
 ### evorule-rule 失对齐 Tier 1 的后果
 
-- 平台用户写入的规则 evorule 引擎加载失败
+- 平台项目方写入的规则 evorule 引擎加载失败
 - migration 工具链断裂
 - 跨平台兼容性破坏(同一份规则在 evorule-rule 平台能跑,在 evorule 引擎跑不了)
 - "正规化"失败,evorule 没法向产品化推进
@@ -149,7 +149,7 @@ evorule-rule 升级时:
 
 ## 升级节奏
 
-| 阶段 | Tier 1 | evorule-rule | 用户规则 |
+| 阶段 | Tier 1 | evorule-rule | 项目方规则 |
 |------|--------|--------------|----------|
 | v0 草案 | 起草中 | 暂不引用 | 暂不要求 |
 | v0.9 冻结 | 草稿冻结 | 接入 schema 校验 | 可选引用 |
@@ -159,7 +159,7 @@ evorule-rule 升级时:
 
 **关键点**:
 - Tier 1 主版本 = evorule-rule 主版本(对齐)
-- Tier 1 冻结 = 用户规则强制对齐(失对齐拒绝加载)
+- Tier 1 冻结 = 项目方规则强制对齐(失对齐拒绝加载)
 - Tier 1 草稿期 = 双方可灵活(但 v0.9 之后收紧)
 
 ## 一句话总结

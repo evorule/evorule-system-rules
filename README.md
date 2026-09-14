@@ -127,7 +127,7 @@ evorule-system-rules  (Tier 1,系统宪法,evorule 团队维护)
         ├─→  evo-agent            (Tier 2,evorule 自家应用)
         └─→  evorule-rule         (Tier 2,治理层实现,**受 Tier 1 约束**)
                                           │
-                                          └─→  用户业务规则  (Tier 3,通过 evorule-rule 多租户管理)
+                                          └─→  项目方业务规则  (Tier 3,通过 evorule-rule 多租户管理)
 ```
 
 详细见 [docs/explanation/01-three-tier-governance.md](./docs/explanation/01-three-tier-governance.md)。
@@ -187,24 +187,24 @@ evorule 团队 + 受邀贡献者。提 PR 走标准 review 流程。
 
 商业咨询: <evorulelab@gmail.com>
 
-## 用户内容归属(Scope B)
+## 项目方内容归属(Scope B)
 
-**用户用 evorule-system-rules 的 schema 创作的所有系统 JSON(rule_set / agent_def / workflow_dag / service_registry / knowledge / migration)的知识产权,完全归用户所有。**
+**项目方用 evorule-system-rules 的 schema 创作的所有系统 JSON(rule_set / agent_def / workflow_dag / service_registry / knowledge / migration)的知识产权,完全归项目方所有。**
 
-evorule 生态的 IP 与用户的 IP 是两个独立 scope,互不传染:
+evorule 生态的 IP 与项目方的 IP 是两个独立 scope,互不传染:
 
 | Scope | 包含 | 协议 | 决定权 |
 |---|---|---|---|
 | **Scope A** evorule 自己的 IP | 本仓的 `tools/`、`docs/`、ADR(AGPL+商业)与 `schemas/`(CC0);主仓的 `evorule-tcb` / `evorule-reactor` / `evorule-governance` 等代码(AGPL+商业)与 `core_eval.json`(CC0) | 分层:规范层 CC0 + 实现层 AGPL-3.0-or-later + 商业双模式 | EvoRule 团队 |
-| **Scope B** 用户的 IP | 用户填入 schema 的所有 system JSON(规则集、agent 定义、知识库、工作流等) | **用户自选**(通过 `metadata.license` 字段) | 用户本人 |
+| **Scope B** 项目方的 IP | 项目方填入 schema 的所有 system JSON(规则集、agent 定义、知识库、工作流等) | **项目方自选**(通过 `metadata.license` 字段) | 项目方本人 |
 
 具体含义:
 
-- ✅ **许可证不传染用户内容**:用本仓的 schema 写自己的 rule_set,不会因为 schema 的协议而被强制任何协议(schema 已 CC0,且格式/作品分离是通用法律原则)。schema 是"格式",内容是"作品",作者拥有作品。
-- ✅ **用户可完全闭源**:`metadata.license` 字段的 `Proprietary` / `Custom` 选项就是为完全自有/闭源准备的。
-- ✅ **用户可自由分发 / 商用 / 卖许可**:这是用户的权利,与 evorule 无关。
-- ✅ **第三方做兼容 SDK**:本仓 schema 以 CC0 奉献,第三方读取 schema 编写校验器、IDE 插件等工具**无任何许可证约束**(工具与用户内容均可自选协议);工具读的用户内容同样不受任何传染。
-- ❌ **用户内容不受 evorule 主张**:evorule 不对用户创作的内容做任何 IP 主张,不要求署名,不要求回馈,不分润。
+- ✅ **许可证不传染项目方内容**:用本仓的 schema 写自己的 rule_set,不会因为 schema 的协议而被强制任何协议(schema 已 CC0,且格式/作品分离是通用法律原则)。schema 是"格式",内容是"作品",作者拥有作品。
+- ✅ **项目方可完全闭源**:`metadata.license` 字段的 `Proprietary` / `Custom` 选项就是为完全自有/闭源准备的。
+- ✅ **项目方可自由分发 / 商用 / 卖许可**:这是项目方的权利,与 evorule 无关。
+- ✅ **第三方做兼容 SDK**:本仓 schema 以 CC0 奉献,第三方读取 schema 编写校验器、IDE 插件等工具**无任何许可证约束**(工具与项目方内容均可自选协议);工具读的项目方内容同样不受任何传染。
+- ❌ **项目方内容不受 evorule 主张**:evorule 不对项目方创作的内容做任何 IP 主张,不要求署名,不要求回馈,不分润。
 
 **"受 evorule-system-rules 治理"** 仅指 **格式层面**(系统 JSON 必须符合 schema 定义的字段结构、类型、必填项),**不**指 **法律层面**(许可证、所有权、商业权利)。
 

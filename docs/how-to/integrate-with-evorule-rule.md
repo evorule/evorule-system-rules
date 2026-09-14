@@ -97,7 +97,7 @@ fn startup_check() {
 | 2 | evorule-rule 团队 | 同步升级 evorule-rule v1.0,字段对齐 |
 | 3 | evorule-rule 团队 | 运行完整 migration 测试 + 双向兼容测试 |
 | 4 | evorule-rule 团队 | 发布 evorule-rule v1.0 |
-| 5 | 平台用户 | 升级 evorule-rule + 运行业务规则 migration |
+| 5 | 平台项目方 | 升级 evorule-rule + 运行业务规则 migration |
 
 ## CI 强制检查
 

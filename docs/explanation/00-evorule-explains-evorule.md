@@ -13,7 +13,7 @@
 
 evorule 不只是"业务规则引擎",它的目标是**递归地治理自己的元层**——
 
-- 第 1 层:evorule 治理用户的业务规则集
+- 第 1 层:evorule 治理项目方的业务规则集
 - 第 2 层:evorule 治理自己的 system JSON(例:`core_eval.json`)
 - 第 3 层:evorule 治理 system JSON 的 schema 升级(例:`v0 → v0.9` 的 migration 规则)
 
@@ -44,7 +44,7 @@ evorule 不只是"业务规则引擎",它的目标是**递归地治理自己的�
 
 1. **统一表达**:业务规则 / 系统规则 / 升级规则 用同一种语言表达
 2. **统一工具**:同一套工具(校验器、迁移器)处理所有规则
-3. **统一治理**:用户业务规则和系统元规则在同一个平台上
+3. **统一治理**:项目方业务规则和系统元规则在同一个平台上
 4. **统一升级**:所有规则都走 migration 工具,所有升级都有迹可循
 
 ## 与 evorule-rule 的关系
@@ -53,7 +53,7 @@ evorule-rule 是 evorule 生态的"治理层",但它自身**也是 evorule 治�
 
 - evorule-rule 的字段格式必须遵循 evorule-system-rules(Tier 1)
 - evorule-rule 的升级节奏受 Tier 1 约束
-- 用户业务规则通过 evorule-rule 平台管理,evorule-rule 负责用 Tier 1 校验它们
+- 项目方业务规则通过 evorule-rule 平台管理,evorule-rule 负责用 Tier 1 校验它们
 
 详见 [03-与 evorule-rule 的关系](./03-evorule-rule-alignment.md)。
 

@@ -55,26 +55,26 @@ evorule-system-rules 是**生态治理层**(Tier 1),所有 evorule 生态的 sys
 - 决定权:EvoRule 团队
 - 商业许可咨询:<evorulelab@gmail.com>
 
-### 2.2 Scope B(用户的 system JSON 内容 IP)
+### 2.2 Scope B(项目方的 system JSON 内容 IP)
 
-- 包含:用户用本仓 schema 创作的所有 system JSON(规则集、agent 定义、知识库、工作流、迁移规则、服务注册)
-- 协议:**用户自选** —— 通过 `metadata.license` 字段声明,enum 为 `Apache-2.0` / `MIT` / `BSD-3-Clause` / `Proprietary` / `Custom`
-- 决定权:**用户本人**
+- 包含:项目方用本仓 schema 创作的所有 system JSON(规则集、agent 定义、知识库、工作流、迁移规则、服务注册)
+- 协议:**项目方自选** —— 通过 `metadata.license` 字段声明,enum 为 `Apache-2.0` / `MIT` / `BSD-3-Clause` / `Proprietary` / `Custom`
+- 决定权:**项目方本人**
 - evorule 不对 Scope B 内容做任何 IP 主张:不要求署名、不要求回馈、不参与分润、不强制披露
 
 ### 2.3 Scope 分离的法律基础
 
 - AGPL-3.0 的 copyleft 效力**仅**附着在 **AGPL 协议的作品本身**(本仓的 tools、docs;schemas 已 CC0 无传染力),**不**对**使用 schema 创作的下游作品**施加传染。
-- 这与"用 Microsoft Word 模板写文档,文档是用户的"的常识一致;与"用 SQL 语法写查询,查询是作者的"的法律实践一致。
+- 这与"用 Microsoft Word 模板写文档,文档是项目方的"的常识一致;与"用 SQL 语法写查询,查询是作者的"的法律实践一致。
 - 详细论证见 [docs/adr/scope-split-ip-model.md](./docs/adr/scope-split-ip-model.md)
 
-## 3. 商业用户场景澄清
+## 3. 商业项目方场景澄清
 
-商业用户购买 evorule 商业许可的**覆盖范围**仅是 Scope A(本仓 + 主仓的 evorule 框架)。**用户创作的 Scope B 内容不通过本许可覆盖**,因为:
+商业项目方购买 evorule 商业许可的**覆盖范围**仅是 Scope A(本仓 + 主仓的 evorule 框架)。**项目方创作的 Scope B 内容不通过本许可覆盖**,因为:
 
-1. Scope B 内容**本就归用户所有**,evorule 无需"许可"用户使用自己的内容。
-2. 商业用户买 evorule 商业许可是为了**合法使用 evorule 框架**(不公开自家产品的源代码),不是为了**获取自己内容的 IP**。
-3. 商业用户可任意处置 Scope B 内容(开源、闭源、SaaS、出售、定制),只要其产品中"使用 evorule 框架"的部分遵守 Scope A 商业许可即可。
+1. Scope B 内容**本就归项目方所有**,evorule 无需"许可"项目方使用自己的内容。
+2. 商业项目方买 evorule 商业许可是为了**合法使用 evorule 框架**(不公开自家产品的源代码),不是为了**获取自己内容的 IP**。
+3. 商业项目方可任意处置 Scope B 内容(开源、闭源、SaaS、出售、定制),只要其产品中"使用 evorule 框架"的部分遵守 Scope A 商业许可即可。
 
 具体商业许可条款细节见 [COMMERCIAL_LICENSE.md](./COMMERCIAL_LICENSE.md);FAQ 见 [DUAL_LICENSE.md](./DUAL_LICENSE.md)。
 
