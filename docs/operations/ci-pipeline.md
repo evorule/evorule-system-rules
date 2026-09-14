@@ -45,10 +45,10 @@
 
 ### 6. 白名单对齐闸（`check_whitelist_sync.py`）
 
-- TCB dispatch（`evorule-tcb/src/executor.rs`）↔ schema enum ↔ governance/CLI 白名单**三向一致**（77 线1 / 70 F-01）
+- TCB dispatch（`evorule-tcb/src/executor.rs`）↔ schema enum ↔ governance/CLI 白名单 ↔ bundle 结构门禁（`evorule-bundle/src/structure.rs`）**对齐一致**（77 线1 / 70 F-01；bundle 第四向为存量豁免清零 L1，2026-09-15 接入）
 - 防 P0-01 复发：TCB 新增/调整元指令即 FAIL
 - 命令：`python tools/check_whitelist_sync.py`
-- **依赖外部权威仓**：需 `EVORULE_REPO` 指向已检出的 evorule 仓（缺文件 → FAIL）
+- **依赖外部权威仓**：需 `EVORULE_REPO` 指向已检出的 evorule 仓、`EVORULE_BUNDLE_REPO` 指向已检出的 evorule-bundle 仓（缺文件 → FAIL）
 
 ### 7. Schema 闭环验收（`_verify_schemas.py`）
 

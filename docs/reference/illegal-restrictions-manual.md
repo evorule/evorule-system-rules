@@ -93,7 +93,7 @@
 
 | 声明 | 命令（工作目录） | 期望输出 |
 |---|---|---|
-| 元指令白名单对齐（TCB dispatch 5 种 = schema enum；governance 公开白名单 4 种 = dispatch − enforce；CLI 引用 SSOT） | `python tools/check_whitelist_sync.py`（`d:\evorule-system-rules`） | `[PASS] 白名单对齐（dispatch 5 种: branch, enforce, io_request, push, set；公开白名单 4 种；CLI 引用 SSOT）` |
+| 元指令白名单对齐（TCB dispatch 5 种 = schema enum；governance 公开白名单 4 种 = dispatch − enforce；CLI 引用 SSOT；bundle 结构门禁 = dispatch） | `python tools/check_whitelist_sync.py`（`d:\evorule-system-rules`） | `[PASS] 白名单对齐（dispatch 5 种: branch, enforce, io_request, push, set；公开白名单 4 种；CLI 引用 SSOT；bundle 结构门禁一致）` |
 | 禁区负向用例全部被 schema 拒（not.domain / increment 混层 / set 缺 value / 非 `__` 路径等） | `python _verify_schemas.py`（`d:\evorule-system-rules`） | 全部 `[PASS]` 且进程退出码 0（`ALL OK`） |
 | 真实规则文件通过 schema（core_eval / 10_role13_demo / yuanze / service_registry 合并视图） | 同上 | 正向用例全部 `[PASS]` |
 | rule_translate 输出闸拒绝非法产物 | `cargo test -p evorule-workspace`（`d:\evorule-server`） | `schema_gate_rejects_unknown_op`、`schema_gate_rejects_invalid_set_operation` 通过 |

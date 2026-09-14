@@ -13,6 +13,10 @@ check_whitelist_sync.py: 白名单对齐闸（77 线1 第 3 行 / 70 F-01）。
         （= dispatch − enforce：enforce 仅 tier=meta 文件可用，由 server 装载门禁单独管控，UV-147）
     3)  CLI 白名单  evorule-cli/src/commands/validate.rs
         （无本地副本，必须引用 evorule_tcb::META_INSTRUCTION_TYPES SSOT，C2）
+      ↕ 一致
+    4)  bundle 结构门禁  evorule-bundle/src/structure.rs -> META_INSTRUCTION_TYPES
+        （= dispatch 全量含 enforce：本门禁只管"是否元指令形态"，tier=meta 进入
+        管控属 server 装载门禁 UV-147；存量豁免清零 L1，2026-09-15 接入）
 
 修复背景（P0-01）：governance/CLI 曾把指令层类型（noop/increment/decrement）误混入元指令白名单，
 且漏掉 collect/merge，导致假阳性/假阴性。本次脚本把"对齐"从**手动 + 自我引用测试**（断言常量==
@@ -24,7 +28,8 @@ check_whitelist_sync.py: 白名单对齐闸（77 线1 第 3 行 / 70 F-01）。
     python tools/check_whitelist_sync.py
 
 退出码:
-    0 - 一致（schema == TCB dispatch；governance == dispatch − enforce；CLI 引用 SSOT）
+    0 - 一致（schema == TCB dispatch；governance == dispatch − enforce；CLI 引用 SSOT；
+        bundle 结构门禁 == dispatch）
     1 - 存在不一致（任一来源解析失败或列表不同）
 """
 from __future__ import annotations
@@ -41,10 +46,12 @@ SCHEMAS_DIR = HERE.parent / "schemas"
 # 外部仓路径：可用环境变量覆盖（默认与 _verify_schemas.py 相同的本机路径）
 EVORULE_REPO = Path(os.environ.get("EVORULE_REPO", r"D:\evorule"))
 EVORULE_SERVER_REPO = Path(os.environ.get("EVORULE_SERVER_REPO", r"D:\evorule-server"))
+EVORULE_BUNDLE_REPO = Path(os.environ.get("EVORULE_BUNDLE_REPO", r"D:\evorule-bundle"))
 
 TCB_EXECUTOR = EVORULE_REPO / "evorule-tcb" / "src" / "executor.rs"
 GOVERNANCE_RULE_VALIDATION = EVORULE_REPO / "evorule-governance" / "src" / "rule_validation.rs"
 CLI_VALIDATE = EVORULE_REPO / "evorule-cli" / "src" / "commands" / "validate.rs"
+BUNDLE_STRUCTURE = EVORULE_BUNDLE_REPO / "src" / "structure.rs"
 SHARED_SCHEMA = SCHEMAS_DIR / "_shared" / "v1.0.json"
 
 # 解析器：提取 Rust 字符串字面量数组项 "word"
@@ -64,10 +71,15 @@ def extract_tcb_dispatch() -> list[str]:
 
 
 def extract_rust_str_array(path: Path, const_name: str) -> list[str]:
-    """从 Rust 常量数组 `const NAME: &[&str] = &[...]` 提取字符串项。"""
+    """从 Rust 常量数组提取字符串项。
+
+    兼容两种声明形态（存量豁免清零 L1）：
+    - 切片 `const NAME: &[&str] = &[...]`（governance rule_validation.rs）
+    - 定长数组 `const NAME: [&str; N] = [...]`（bundle structure.rs）
+    """
     src = path.read_text(encoding="utf-8")
     pat = re.compile(
-        rf"const\s+{const_name}\s*:\s*&\[&str\]\s*=\s*&\s*\[(.*?)\]",
+        rf"const\s+{const_name}\s*:\s*&?\[&str(?:\s*;\s*\d+)?\]\s*=\s*&?\s*\[(.*?)\]",
         re.DOTALL,
     )
     m = pat.search(src)
@@ -95,20 +107,23 @@ def check_cli_ssot() -> tuple[bool, str]:
 
 
 def main() -> int:
-    print("== 白名单对齐闸（77 线1 / 70 F-01）：TCB dispatch ↔ schema ↔ governance ↔ CLI ==")
+    print("== 白名单对齐闸（77 线1 / 70 F-01）：TCB dispatch ↔ schema ↔ governance ↔ CLI ↔ bundle ==")
     labels = {
         "tcb": "TCB executor.rs dispatch",
         "schema": "schema _shared enum",
         "governance": "governance rule_validation.rs",
+        "bundle": "bundle structure.rs",
     }
     try:
         checks: dict[str, list[str]] = {
             "tcb": extract_tcb_dispatch(),
             "schema": extract_schema_enum(),
             "governance": extract_rust_str_array(GOVERNANCE_RULE_VALIDATION, "VALID_TRANSFORM_TYPES"),
+            "bundle": extract_rust_str_array(BUNDLE_STRUCTURE, "META_INSTRUCTION_TYPES"),
         }
     except FileNotFoundError as e:
-        print(f"  [FAIL] 权威源文件缺失——请用 EVORULE_REPO / EVORULE_SERVER_REPO 指向已检出的权威仓: {e}")
+        print(f"  [FAIL] 权威源文件缺失——请用 EVORULE_REPO / EVORULE_SERVER_REPO / "
+              f"EVORULE_BUNDLE_REPO 指向已检出的权威仓: {e}")
         return 1
     except Exception as e:  # noqa: BLE001 - 解析失败视为门禁失败
         print(f"  [FAIL] {e}")
@@ -130,6 +145,12 @@ def main() -> int:
         all_ok = False
         diff = sorted(set(checks["governance"]) ^ set(expected_gov))
         print(f"  [FAIL] governance ≠ dispatch−enforce({expected_gov}): 差集={diff}")
+    # bundle 结构门禁 == dispatch 全量（含 enforce：本门禁只管"是否元指令形态"，
+    # tier=meta 进入管控属 server 装载门禁 UV-147）
+    if checks["bundle"] != baseline:
+        all_ok = False
+        diff = sorted(set(checks["bundle"]) ^ set(baseline))
+        print(f"  [FAIL] bundle 结构门禁 ≠ TCB dispatch({baseline}): 差集={diff}")
 
     cli_ok, cli_msg = check_cli_ssot()
     print(f"  [CLI validate.rs] {cli_msg}")
@@ -138,7 +159,7 @@ def main() -> int:
 
     if all_ok:
         print(f"  [PASS] 白名单对齐（dispatch {len(baseline)} 种: {', '.join(baseline)}；"
-              f"公开白名单 {len(expected_gov)} 种；CLI 引用 SSOT）")
+              f"公开白名单 {len(expected_gov)} 种；CLI 引用 SSOT；bundle 结构门禁一致）")
         return 0
     print("  [FAIL] 白名单不一致——TCB 权威源已变更或上层未同步，需立即对齐（防 P0-01 复发）")
     return 1

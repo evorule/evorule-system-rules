@@ -4,6 +4,13 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/),
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### 存量豁免清零（2026-09-15）
+- **scan_repo_json.py 豁免清单扩容** — T8 缓办的 server 53 条 / evo-agent 6 条存量违规全部终裁：20 个 bundle 条目带壳整改（rule_set v1.0，零语义变更）、33 条按判据三问补登记豁免（schema 权威文件自身 / 工具配置 / CLA 台账 / 插件契约资产 / bundle 溯源 manifest / evo-agent 属地执法形态 / wasm 演示夹具）；`EXEMPT_PATTERNS` 每条附判据注释，与 04-governance-scope.md 豁免表同批同步
+- 根仓 `evorule-wasm-demo/rules_merged.json` 判定为构建产物（determinism_run.js 生成）→ gitignore 退出门禁面（根仓侧暂存，待提交）
+- **check_whitelist_sync.py 白名单对齐闸扩至 bundle 第四向（L1 同步链，2026-09-15）** — 新增校验 `evorule-bundle/src/structure.rs::META_INSTRUCTION_TYPES` == TCB dispatch 全量（含 enforce；解析器兼容 `&[&str]` 切片与 `[&str; N]` 定长数组两种声明形态）；`EVORULE_BUNDLE_REPO` 环境变量可覆盖默认路径；实测 PASS（exit 0），ci-pipeline.md §6 与 illegal-restrictions-manual.md 期望输出同批更新
+
 ## [v1.0.0] - 2026-08-27
 
 ### 固化
