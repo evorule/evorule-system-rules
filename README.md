@@ -1,4 +1,8 @@
-# evorule-system-rules
+# evorule-system-rules
+
+> **仓库角色**：本仓库是 **GitHub 镜像**。权威源（primary repo）在 **Gitee**：[https://gitee.com/evorule/evorule-system-rules](https://gitee.com/evorule/evorule-system-rules)。
+> Issue / PR 请提交到 Gitee，GitHub 侧仅供镜像与推广展示。
+
 
 > 定型:evorule 生态的"系统元规则集",所有 evorule 系统 JSON 的 schema / 版本 / 升级权威
 > **现行版本:v1.0(2026-08-27 固化;v0.9 双版本并存,迁移线 `v0.9-to-v1.0`)**
