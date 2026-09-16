@@ -4,13 +4,6 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/),
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [Unreleased]
-
-### 存量豁免清零（2026-09-15）
-- **scan_repo_json.py 豁免清单扩容** — 此前缓办的 server 53 条 / evo-agent 6 条存量违规全部处置完成：20 个 bundle 条目带壳整改（rule_set v1.0，零语义变更）、33 条按豁免判据补登记豁免（schema 权威文件自身 / 工具配置 / CLA 台账 / 插件契约资产 / bundle 溯源 manifest / evo-agent 属地执法形态 / wasm 演示夹具）；`EXEMPT_PATTERNS` 每条附判据注释，与 04-governance-scope.md 豁免表同批同步
-- 根仓 `evorule-wasm-demo/rules_merged.json` 判定为构建产物（determinism_run.js 生成）→ gitignore 退出门禁面
-- **check_whitelist_sync.py 白名单对齐闸扩至 bundle 第四向（L1 同步链，2026-09-15）** — 新增校验 `evorule-bundle/src/structure.rs::META_INSTRUCTION_TYPES` == TCB dispatch 全量（含 enforce；解析器兼容 `&[&str]` 切片与 `[&str; N]` 定长数组两种声明形态）；`EVORULE_BUNDLE_REPO` 环境变量可覆盖默认路径；实测 PASS（exit 0），ci-pipeline.md §6 与 illegal-restrictions-manual.md 期望输出同批更新
-
 ## [v1.0.0] - 2026-08-27
 
 ### 固化
@@ -35,27 +28,3 @@
 ### 文档
 - Diátaxis 结构重整:theorem→tutorial / how-to / reference / explanation 四象限 + ADR 已定型规范格式
 
-## [v0.9.0] - 未发布草案
-
-### 草案范围
-- 6 个 kind 的 v0.9 schema(rule_set / agent_def / workflow_dag / service_registry / knowledge / migration)
-- 通用 5 顶层字段元模式(`_meta/v0.9.json`)
-- 6 个 kind 的最小例子
-- evorule-migrate 工具(Python 初级版)
-- 4 阶段实施路径文档
-
-### 设计规范(已定型,确定性内容)
-- 5 顶层字段规范
-- 顶层 body 字段语义化
-- 双版本协议
-- evorule-rule 必须对齐
-- 自举终止条件
-
-### 文档结构
-- `adr/` 目录采用"已定型设计规范"格式,不展示决策过程
-- 每篇规范结构:是什么 / 为什么 / 怎么用 / 不接受的替代方案
-- 决策过程不随文档公开
-
-## [v0] - 开发基线(未发布)
-
-未发布的草案基线,仅作"v0 → v0.9"迁移的起点。
