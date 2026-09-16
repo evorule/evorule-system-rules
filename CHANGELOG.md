@@ -7,8 +7,8 @@
 ## [Unreleased]
 
 ### 存量豁免清零（2026-09-15）
-- **scan_repo_json.py 豁免清单扩容** — T8 缓办的 server 53 条 / evo-agent 6 条存量违规全部终裁：20 个 bundle 条目带壳整改（rule_set v1.0，零语义变更）、33 条按判据三问补登记豁免（schema 权威文件自身 / 工具配置 / CLA 台账 / 插件契约资产 / bundle 溯源 manifest / evo-agent 属地执法形态 / wasm 演示夹具）；`EXEMPT_PATTERNS` 每条附判据注释，与 04-governance-scope.md 豁免表同批同步
-- 根仓 `evorule-wasm-demo/rules_merged.json` 判定为构建产物（determinism_run.js 生成）→ gitignore 退出门禁面（根仓侧暂存，待提交）
+- **scan_repo_json.py 豁免清单扩容** — 此前缓办的 server 53 条 / evo-agent 6 条存量违规全部处置完成：20 个 bundle 条目带壳整改（rule_set v1.0，零语义变更）、33 条按豁免判据补登记豁免（schema 权威文件自身 / 工具配置 / CLA 台账 / 插件契约资产 / bundle 溯源 manifest / evo-agent 属地执法形态 / wasm 演示夹具）；`EXEMPT_PATTERNS` 每条附判据注释，与 04-governance-scope.md 豁免表同批同步
+- 根仓 `evorule-wasm-demo/rules_merged.json` 判定为构建产物（determinism_run.js 生成）→ gitignore 退出门禁面
 - **check_whitelist_sync.py 白名单对齐闸扩至 bundle 第四向（L1 同步链，2026-09-15）** — 新增校验 `evorule-bundle/src/structure.rs::META_INSTRUCTION_TYPES` == TCB dispatch 全量（含 enforce；解析器兼容 `&[&str]` 切片与 `[&str; N]` 定长数组两种声明形态）；`EVORULE_BUNDLE_REPO` 环境变量可覆盖默认路径；实测 PASS（exit 0），ci-pipeline.md §6 与 illegal-restrictions-manual.md 期望输出同批更新
 
 ## [v1.0.0] - 2026-08-27
@@ -21,9 +21,9 @@
 - 全部 schema 注入机器可读声明字段 `x_legal_authority_notice`(AGPL-3.0-or-later + 商业双许可;经 schema 校验或创作的内容 IP 归作者,evorule 不主张)
 - 新增法律文件体系:LEGAL_NOTES / NOTICE / DUAL_LICENSE / COMMERCIAL_LICENSE / FREE_COMMERCIAL_LICENSE / TRADEMARK,设计依据见 `docs/adr/scope-split-ip-model.md`
 
-### 规则格式统一改造(RULE_FORMAT_UNIFY_RETROFIT)
+### 规则格式统一改造
 - yuanze_rules.json 等真实资产对齐 5 顶层字段 + v1.0(修复单数 `__io_result__` → 复数 `__io_results__`、非法元指令 save_memory 下线)
-- examples 全部升级为 v1.0 形态;service_registry 采用主体+`.meta.json` sidecar 标注(D2 模型)
+- examples 全部升级为 v1.0 形态;service_registry 采用主体+`.meta.json` sidecar 标注
 - `_verify_schemas.py`:15 schema 合法性 + 门禁正负用例 + examples 闭环 + 白名单四向一致的全量验收基准
 
 ### 工具与守卫
@@ -35,9 +35,9 @@
 ### 文档
 - Diátaxis 结构重整:theorem→tutorial / how-to / reference / explanation 四象限 + ADR 已定型规范格式
 
-## [未发布] - v0.9.0 起草中
+## [v0.9.0] - 未发布草案
 
-### 计划添加
+### 草案范围
 - 6 个 kind 的 v0.9 schema(rule_set / agent_def / workflow_dag / service_registry / knowledge / migration)
 - 通用 5 顶层字段元模式(`_meta/v0.9.json`)
 - 6 个 kind 的最小例子
@@ -54,8 +54,8 @@
 ### 文档结构
 - `adr/` 目录采用"已定型设计规范"格式,不展示决策过程
 - 每篇规范结构:是什么 / 为什么 / 怎么用 / 不接受的替代方案
-- 内部决策过程记录在项目内部协作区
+- 决策过程不随文档公开
 
-## [v0] - 内部基线
+## [v0] - 开发基线(未发布)
 
-不发布的草案基线,仅作"v0 → v0.9"迁移的起点。
+未发布的草案基线,仅作"v0 → v0.9"迁移的起点。
