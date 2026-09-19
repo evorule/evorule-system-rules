@@ -74,32 +74,37 @@ evorule agent 定义。
 
 ## kind: workflow_dag
 
-DAG workflow 定义。
+DAG workflow 定义（对齐 evo-agent Workflow 引擎；v1.0 与 v1.1 并存，v1.1 仅新增节点级可选 `run_when`）。
 
 **body 字段**:
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `nodes` | array\<node\> | 是 | ≥1 个节点 |
-| `edges` | array\<edge\> | 否 | 边(可省略表示无连接) |
+| `workflow_id` | string | 是 | 工作流 id（`^[A-Za-z0-9_-]+$`） |
+| `description` | string | 否 | 人类可读描述 |
+| `nodes` | array\<node\> | 是 | ≥1 个节点（`depends_on` 内联隐式边表） |
+| `output_node` | string | 是 | 输出节点 id：其结果作为整个工作流的返回值 |
 
 **node 子字段**:
 
 | 字段 | 类型 | 必填 | 约束 |
 |------|------|------|------|
-| `id` | string | 是 | `^[a-zA-Z_][a-zA-Z0-9_]*$` |
-| `type` | enum | 是 | `task` / `decision` / `fork` / `join` / `agent_invocation` / `rule_invocation` / `service_call` |
-| `config` | object | 否 | type-specific 配置 |
+| `id` | string | 是 | `^[A-Za-z0-9_-]+$`（工作流内唯一） |
+| `agent_type` | string | 是 | `^[A-Za-z0-9_-]+$`（对应 `agents/<type>.json`） |
+| `task` | string | 否 | 静态任务描述（与 `task_template` 二选一，同时提供时后者优先） |
+| `task_template` | string | 否 | 可含 `{node_id}` 占位符，执行期被上游结果替换 |
+| `depends_on` | array\<string\> | 否 | 依赖节点 id 列表；环在拓扑排序期拒绝 |
+| `run_when` | object | 否 | **v1.1** 条件分支：`{ node, op, value }`；求值为假 → 跳过本节点，直接依赖被跳过节点的下游级联跳过（豁免需下游显式声明自己的 `run_when`） |
 
-**edge 子字段**:
+**run_when 子字段（v1.1）**:
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `from` | string | 是 | 起始节点 ID |
-| `to` | string | 是 | 目标节点 ID |
-| `condition` | string | 否 | 边的条件表达式 |
+| `node` | string | 是 | 被观察节点 id（须位于本节点更早拓扑层；被跳过时视作空字符串） |
+| `op` | enum | 是 | `contains` / `equals` / `not_contains` |
+| `value` | string | 是 | 期望值（与上游结果字符串比较） |
 
-**完整例子**: `examples/workflow_dag.example.json`
+**完整例子**: `examples/workflow_dag.example.json`（v1.0）、`examples/workflow_dag_v1.1.example.json`（v1.1）
 
 ## kind: service_registry
 

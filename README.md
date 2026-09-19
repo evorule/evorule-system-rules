@@ -52,6 +52,7 @@ evorule-system-rules/
     rule_set/v1.0.json        kind: rule_set(固化版)
     agent_def/v1.0.json       kind: agent_def(未验证草案,见 D5)
     workflow_dag/v1.0.json    kind: workflow_dag
+    workflow_dag/v1.1.json    kind: workflow_dag(条件分支 run_when,与 v1.0 并存)
     service_registry/v1.0.json
     knowledge/v1.0.json
     migration/v1.0.json       (各 kind v0.9 与 v1.0 双版本并存)

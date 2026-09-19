@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/workflow_dag/v1.1.json",
+  "title": "evorule workflow_dag v1.1（已验证：对齐 evo-agent Workflow，新增节点级条件分支）",
+  "description": "DAG workflow 定义（对应 evo-agent/rules/workflows/*.json）。v1.1 相对 v1.0 的唯一增量：节点级可选字段 run_when（条件分支）——节点可声明基于上游结果的执行条件，求值为假则跳过本节点。跳过语义：直接依赖被跳过节点的下游节点级联跳过（确定性最强：同输入必同输出）；豁免级联需下游显式声明自己的 run_when；run_when 引用的节点被跳过或尚无结果时，其结果视作空字符串。run_when 求值是纯函数（可审计、同输入同输出），谓词最小集 contains/equals/not_contains 冻结于本版本。加载侧门卫：run_when.node 必须为工作流内存在的节点，且位于本节点的更早拓扑层（保证条件求值时其结果已就绪）。依据双版本协议（docs/adr/double-version-protocol.md），新增可选字段属次版本变化：v1.0 存量 JSON 仍可用、零迁移，无需 migration 通道。门卫约定延续 v1.0：node.id 与 agent_type ∈ [A-Za-z0-9_-]+（防模板占位符污染与路径穿越）、Kahn 环检测在执行期。",
+  "x_legal_authority_notice": "本 schema 由 EvoRule 团队维护,以 CC0 1.0 公共领域奉献(见 schemas/LICENSE-SCHEMAS.md);通过本 schema 校验或创作的 system JSON 内容 IP 归作者所有,evorule 不主张。详见 ../../LEGAL_NOTES.md 与 ../../docs/adr/scope-split-ip-model.md",
+  "allOf": [
+    { "$ref": "../_meta/v1.0.json" },
+    {
+      "type": "object",
+      "required": ["workflow_id", "nodes", "output_node"],
+      "properties": {
+        "kind": { "const": "workflow_dag" },
+        "workflow_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "工作流 id（用于日志/加载）"
+        },
+        "description": { "type": "string" },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/node" }
+        },
+        "output_node": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "输出节点 id：其结果作为整个工作流的返回值；若该节点被跳过，工作流以错误终止（无静默空结果）"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": ["id", "agent_type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "节点 id（工作流内唯一），被 depends_on / task_template 占位符 {id} / output_node / run_when.node 引用。标识符白名单防占位符污染。"
+        },
+        "agent_type": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "执行该节点的 agent 类型（agents/<agent_type>.json）。白名单防路径穿越。"
+        },
+        "task": {
+          "type": "string",
+          "description": "静态任务描述（与 task_template 二选一；同时提供时 task_template 优先）"
+        },
+        "task_template": {
+          "type": "string",
+          "description": "任务模板：可含 {node_id} 占位符，执行期被上游节点结果替换；被跳过的上游节点占位符替换为空字符串"
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": "依赖的节点 id 列表（隐式边表）；须全部完成后本节点才执行；引用不存在节点/自依赖在加载校验期拒绝，环在拓扑排序期拒绝；任一依赖被跳过时本节点级联跳过（除非本节点声明了 run_when）"
+        },
+        "run_when": { "$ref": "#/$defs/run_when" }
+      }
+    },
+    "run_when": {
+      "type": "object",
+      "required": ["node", "op", "value"],
+      "additionalProperties": false,
+      "description": "节点级执行条件（v1.1 新增，可选）：求值为真才执行本节点，为假则跳过。求值为纯函数：取被观察节点的结果字符串与 value 比较；被观察节点被跳过或尚无结果时视作空字符串。豁免语义：声明了 run_when 的节点不受级联跳过影响，去留完全由自身条件决定。",
+      "properties": {
+        "node": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "被观察节点的 id：必须存在于本工作流，且位于本节点的更早拓扑层（其结果在条件求值时已就绪）；引用不存在节点或同层/下游节点在加载校验期拒绝"
+        },
+        "op": {
+          "enum": ["contains", "equals", "not_contains"],
+          "description": "比较谓词（最小集，本版本冻结）：contains=结果包含 value；equals=结果完全等于 value；not_contains=结果不包含 value"
+        },
+        "value": {
+          "type": "string",
+          "description": "期望值：与被观察节点的结果字符串做比较"
+        }
+      }
+    }
+  }
+}

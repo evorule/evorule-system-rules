@@ -1,0 +1,44 @@
+{
+  "$schema": "https://evorule.org/schemas/workflow_dag/v1.1.json",
+  "kind": "workflow_dag",
+  "id": "com.example.workflow.conditional_publish",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "条件分支工作流示例（v1.1 run_when）",
+    "description": "展示 workflow_dag v1.1 新增的节点级条件分支：review 结果包含 APPROVE 时才发布，否则 publish 被跳过，archive 因直接依赖 publish 被级联跳过。",
+    "authors": ["bob@example.com"],
+    "created": "2026-09-19",
+    "updated": "2026-09-19",
+    "tags": ["example", "workflow", "conditional"],
+    "provenance": { "source": "manual" }
+  },
+  "workflow_id": "conditional_publish",
+  "description": "起草 → 审阅 → 条件发布 → 归档：审阅未通过时发布与归档均被跳过",
+  "nodes": [
+    {
+      "id": "draft",
+      "agent_type": "writer",
+      "task": "起草产品发布公告初稿"
+    },
+    {
+      "id": "review",
+      "agent_type": "reviewer",
+      "task_template": "审阅以下初稿，结论以 APPROVE 或 REJECT 开头：\n{draft}",
+      "depends_on": ["draft"]
+    },
+    {
+      "id": "publish",
+      "agent_type": "publisher",
+      "task_template": "将以下已通过审阅的公告发布到官网：\n{review}",
+      "depends_on": ["review"],
+      "run_when": { "node": "review", "op": "contains", "value": "APPROVE" }
+    },
+    {
+      "id": "archive",
+      "agent_type": "writer",
+      "task_template": "为已发布公告生成存档摘要：\n{publish}",
+      "depends_on": ["publish"]
+    }
+  ],
+  "output_node": "publish"
+}

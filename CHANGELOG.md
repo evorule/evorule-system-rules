@@ -4,6 +4,15 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/),
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [v1.1.0] - 2026-09-19
+
+### 新增
+- `workflow_dag/v1.1` schema：节点级可选条件分支字段 `run_when`（`{ node, op, value }`，谓词最小集 `contains`/`equals`/`not_contains`）。求值为假跳过本节点；直接依赖被跳过节点的下游级联跳过，豁免需下游显式声明自己的 `run_when`。依据双版本协议属次版本新增可选字段：v1.0 存量 JSON 零迁移可用
+- 示例 `examples/workflow_dag_v1.1.example.json`（条件发布工作流）
+
+### 修正
+- `docs/reference/schema-reference.md` workflow_dag 段：移除残留的未采纳草案描述（独立 `edges[]` 数组 + `node.type` 枚举），对齐真实 body 模型（内联 `depends_on` 隐式边表）并补充 `run_when`
+
 ## [v1.0.0] - 2026-08-27
 
 ### 固化
