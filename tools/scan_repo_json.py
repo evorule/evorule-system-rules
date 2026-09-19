@@ -33,7 +33,7 @@ SKIP_DIRS = {"target", ".git", "node_modules", ".cargo", "dist"}
 
 # 豁免清单：路径片段匹配（与 docs/explanation/04-governance-scope.md 登记保持一致）。
 # 每条必须能回答判据三问：谁加载 / 是否参与生产执行链路 / 生命周期谁自管。
-# 2026-09-15 存量清零专项：T8 缓办的 53+6 条全部终裁——20 条目带壳整改，
+# 2026-09-15 存量清零专项：缓办事项的 53+6 条全部终裁——20 条目带壳整改，
 # 其余按下述判据补登记（详见 ISSUES_LEDGER 存量豁免清零条目）。
 EXEMPT_PATTERNS = [
     "tests/fixtures/",       # evorule-cli 等测试夹具（负向夹具依赖无壳语义本身）
@@ -58,7 +58,7 @@ EXEMPT_PATTERNS = [
     "plugin_manifest.json",
     "service_registry.json",
     # ── bundle 落盘溯源 manifest：bundle_land.rs 明确「不参与 loader 加载路径」，
-    #    仅溯源/运行配置元数据；条目文件已于 2026-09-15 全部带壳并补 UV-183
+    #    仅溯源/运行配置元数据；条目文件已于 2026-09-15 全部带壳并补 回归验证
     #    批次F 条目哈希基线（顶层 content_hash 为导入时溯源记录）──
     "bundle_manifest.json",
     # ── evo-agent 属地执法形态：agent_def/workflow_dag 运行时经

@@ -10,19 +10,19 @@ check_whitelist_sync.py: 白名单对齐闸（77 线1 第 3 行 / 70 F-01）。
     1)  schema  enum  schemas/_shared/v1.0.json -> $defs.transform_rule.properties.type.enum
       ↗ 差 enforce
     2)  governance 白名单  evorule-governance/src/rule_validation.rs -> VALID_TRANSFORM_TYPES
-        （= dispatch − enforce：enforce 仅 tier=meta 文件可用，由 server 装载门禁单独管控，UV-147）
+        （= dispatch − enforce：enforce 仅 tier=meta 文件可用，由 server 装载门禁单独管控，回归验证）
     3)  CLI 白名单  evorule-cli/src/commands/validate.rs
         （无本地副本，必须引用 evorule_tcb::META_INSTRUCTION_TYPES SSOT，C2）
       ↕ 一致
     4)  bundle 结构门禁  evorule-bundle/src/structure.rs -> META_INSTRUCTION_TYPES
         （= dispatch 全量含 enforce：本门禁只管"是否元指令形态"，tier=meta 进入
-        管控属 server 装载门禁 UV-147；存量豁免清零 L1，2026-09-15 接入）
+        管控属 server 装载门禁 回归验证；存量豁免清零 L1，2026-09-15 接入）
 
 修复背景（P0-01）：governance/CLI 曾把指令层类型（noop/increment/decrement）误混入元指令白名单，
 且漏掉 collect/merge，导致假阳性/假阴性。本次脚本把"对齐"从**手动 + 自我引用测试**（断言常量==
 测试里硬编码的同一份字面量，TCB 变更时依旧全绿）升级为**引用权威源的自动校验**：TCB 一旦新增/
 调整元指令，本脚本立即 FAIL，拦截静默漂移。
-（69 号清理 2026-09-14：collect/merge 退役，dispatch 5 种、公开白名单 4 种；CLI 检查改为 SSOT 引用）
+（规则清理 2026-09-14：collect/merge 退役，dispatch 5 种、公开白名单 4 种；CLI 检查改为 SSOT 引用）
 
 用法:
     python tools/check_whitelist_sync.py
@@ -134,7 +134,7 @@ def main() -> int:
         print(f"  [{labels[key]}] {', '.join(names)}")
 
     # 期望口径：dispatch 全量含 enforce；schema == dispatch；
-    # governance == dispatch − enforce（enforce 仅 tier=meta 文件可用，UV-147）
+    # governance == dispatch − enforce（enforce 仅 tier=meta 文件可用，回归验证）
     baseline = checks["tcb"]
     expected_gov = sorted(set(baseline) - {"enforce"})
     all_ok = True
@@ -147,7 +147,7 @@ def main() -> int:
         diff = sorted(set(checks["governance"]) ^ set(expected_gov))
         print(f"  [FAIL] governance ≠ dispatch−enforce({expected_gov}): 差集={diff}")
     # bundle 结构门禁 == dispatch 全量（含 enforce：本门禁只管"是否元指令形态"，
-    # tier=meta 进入管控属 server 装载门禁 UV-147）
+    # tier=meta 进入管控属 server 装载门禁 回归验证）
     if checks["bundle"] != baseline:
         all_ok = False
         diff = sorted(set(checks["bundle"]) ^ set(baseline))

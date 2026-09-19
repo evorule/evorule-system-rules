@@ -4,7 +4,7 @@
 # 用法: powershell -File verify-all.ps1        （建议在本仓根目录执行）
 #       或任意 cwd 执行亦可——各脚本已锚定仓根，不受当前目录影响。
 #
-# 2026-08-27 建立：落地 PLANNING_FINALIZE M4-A3。
+# 2026-08-27 建立：落地 规划定稿 M4-A3。
 #   过渡态守卫闭环；待 G1"门禁即规则"设计定稿后，政策性检查项将迁移为热加载规则集。
 
 $ErrorActionPreference = 'Stop'

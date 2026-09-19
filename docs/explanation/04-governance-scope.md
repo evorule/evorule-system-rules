@@ -41,7 +41,7 @@
 | `signatures/version1/cla.json`（server / evo-agent） | server / evo-agent | CLA 签署台账（顶层签署条目数组）：法律记录，非系统 JSON；生命周期由合规流程自管 |
 | `.markdownlint.json` / `sdk/nodejs/package.json` | server / evo-agent | 开发工具配置（lint / npm），仅被开发工具读取，不经任何加载执行路径 |
 | `plugins/**`、`plugin_manifest.json`、`service_registry.json` | server | 插件系统自有契约资产（2026-09-15 存量清零判定）：plugin.json contract_version 体系 + pack 装载 6 项硬校验 + r2_gate 属地执法，加载门禁比 schema 壳更细；生命周期由插件契约演进自管 |
-| `rules/bundles/*/bundle_manifest.json` | server | bundle 落盘溯源 manifest（2026-09-15 存量清零判定）：bundle_land.rs 明确「不参与 loader 加载路径」，仅溯源/运行配置元数据；**条目文件已于 2026-09-15 全部带壳**（rule_set v1.0）并补 UV-183 批次F 逐条目 content_hash 基线；顶层 content_hash 保留为导入时溯源记录 |
+| `rules/bundles/*/bundle_manifest.json` | server | bundle 落盘溯源 manifest（2026-09-15 存量清零判定）：bundle_land.rs 明确「不参与 loader 加载路径」，仅溯源/运行配置元数据；**条目文件已于 2026-09-15 全部带壳**（rule_set v1.0）并补 批次F 逐条目 content_hash 基线；顶层 content_hash 保留为导入时溯源记录 |
 | `agents/*.json`、`rules/workflows/*.json` | evo-agent | 属地执法形态（2026-09-15 存量清零判定）：运行时经 constitution.rs 用 agent_def/workflow_dag v1.0 schema 校验裸 body（见下文属地执法义务表 evo-agent 行）；带壳反而与裸 body 运行时契约冲突。若未来校验降级失效，立即重新入辖 |
 | `evorule-wasm-demo/plan.json` | 根仓 | wasm 演示测试向量（bench/test 脚本夹具）：仅被演示 harness 读取；构建产物 `rules_merged.json` 已 gitignore 退出门禁面 |
 
