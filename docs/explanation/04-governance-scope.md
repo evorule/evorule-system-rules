@@ -34,7 +34,7 @@
 
 | 文件 | 所属 | 定性 |
 |------|------|------|
-| `D:\evorule-server\docs\PITFALLS.json` | server | 工具/文档内部资产（`$schema: pitfalls-v1` 为该工具自造标识），由坑位守卫脚本读取，不经引擎。若未来作为 knowledge 注入运行时，须改造为 knowledge kind 并入辖 |
+| `docs/PITFALLS.json`（evorule-server 仓） | server | 工具/文档内部资产（`$schema: pitfalls-v1` 为该工具自造标识），由坑位守卫脚本读取，不经引擎。若未来作为 knowledge 注入运行时，须改造为 knowledge kind 并入辖 |
 | `acceptance/t6_e2e/*.bak` 等验收夹具 | 本仓 | 测试夹具随所属测试套演进,非系统 JSON |
 | `evorule-cli/tests/fixtures/**/*.json`（8 文件） | 根仓 | 测试夹具（2026-08-27 判定）：仅被 CLI 测试进程加载（`io_util::load_rules→extract_transforms`），不进生产执行链路；全部为裸 `{"transform":[...]}` 原生体，其中 `invalid/`、`unknown-type/` 是**负向夹具**——无壳/非法正是其测试语义，补壳反而破坏用例。由扫描门禁白名单承载（tools/scan_repo_json.py EXEMPT_PATTERNS）。若未来 fixtures 被提升为示例资产则重新判定 |
 | `core/rule_schema/schemas/**/*.json` | server | schema 权威文件自身（2026-09-15 存量清零判定）：自指问题（schema 不能引用自己），由 check_schema_sync + verify_schemas 守护，生命周期随宪法仓版本演进自管 |

@@ -89,7 +89,7 @@ evorule-system-rules/
 ### 一键全量预检（推荐入口）
 
 ```bash
-cd D:\evorule-system-rules
+cd evorule-system-rules
 powershell -File verify-all.ps1
 ```
 
@@ -98,7 +98,7 @@ powershell -File verify-all.ps1
 ### 校验一个 system JSON
 
 ```bash
-cd D:\evorule-system-rules
+cd evorule-system-rules
 python tools/evorule-migrate validate path/to/your.json
 ```
 
@@ -118,7 +118,6 @@ python tools/evorule-migrate upgrade path/to/old.json \
 
 - 公开文档:打开 `docs/` 下的任何 .md,或运行 `mdbook serve docs/` 启动本地服务
 - 文档导航:[docs/introduction.md](./docs/introduction.md)
-- vault 私有工作区:`D:\knowledge\2-Projects\evorule-system-rules\`
 
 详细见 [docs/](./docs/)。
 

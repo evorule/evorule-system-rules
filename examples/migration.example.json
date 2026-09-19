@@ -8,7 +8,7 @@
   "metadata": {
     "title": "v0 → v1.0 添加 5 顶层字段（引擎原生 transform）",
     "description": "为旧 evorule JSON 添加 $schema / kind / id / version / metadata 字段。v1.0 起 transform 用引擎原生语言（D3 对齐自举）：迁移目标 JSON 文档作为 __exec__.payload 加载，合成一条 {type: migrate} 指令触发；branch+instruction 域匹配，set 改值。废弃 v0.9 的 when:missing/present + then:set 伪 DSL。",
-    "authors": ["mavis@evorulelab.com"],
+    "authors": ["evorulelab@gmail.com"],
     "created": "2026-08-23",
     "updated": "2026-08-23",
     "tags": ["migration", "v0_0", "v1_0"],

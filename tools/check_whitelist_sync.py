@@ -43,10 +43,11 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SCHEMAS_DIR = HERE.parent / "schemas"
 
-# 外部仓路径：可用环境变量覆盖（默认与 _verify_schemas.py 相同的本机路径）
-EVORULE_REPO = Path(os.environ.get("EVORULE_REPO", r"D:\evorule"))
-EVORULE_SERVER_REPO = Path(os.environ.get("EVORULE_SERVER_REPO", r"D:\evorule-server"))
-EVORULE_BUNDLE_REPO = Path(os.environ.get("EVORULE_BUNDLE_REPO", r"D:\evorule-bundle"))
+# 外部仓路径：可用环境变量覆盖（默认按兄弟仓布局推导：<检出根>/<repo>）
+_CHECKOUT_ROOT = HERE.parent.parent
+EVORULE_REPO = Path(os.environ.get("EVORULE_REPO") or _CHECKOUT_ROOT / "evorule")
+EVORULE_SERVER_REPO = Path(os.environ.get("EVORULE_SERVER_REPO") or _CHECKOUT_ROOT / "evorule-server")
+EVORULE_BUNDLE_REPO = Path(os.environ.get("EVORULE_BUNDLE_REPO") or _CHECKOUT_ROOT / "evorule-bundle")
 
 TCB_EXECUTOR = EVORULE_REPO / "evorule-tcb" / "src" / "executor.rs"
 GOVERNANCE_RULE_VALIDATION = EVORULE_REPO / "evorule-governance" / "src" / "rule_validation.rs"

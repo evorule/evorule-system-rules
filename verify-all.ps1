@@ -44,7 +44,8 @@ if (Test-Path $empirical) {
 } else {
     Write-Host "`n[SKIP] 拦截实证脚本不在仓内(内部工具,存于 knowledge vault),跳过"
 }
-$serverSync = 'D:\evorule-server\scripts\check_schema_sync.py'
+$siblingRoot = Split-Path -Parent $root   # 兄弟仓检出根（与各仓检出布局一致）
+$serverSync = Join-Path $siblingRoot 'evorule-server\scripts\check_schema_sync.py'
 if (Test-Path $serverSync) {
     Invoke-Step 'server 内嵌副本一致性 (check_schema_sync.py, check-only)' {
         python $serverSync
@@ -52,15 +53,15 @@ if (Test-Path $serverSync) {
 } else {
     Write-Host "`n[SKIP] server 仓不存在($serverSync)，跳过副本同步检查"
 }
-$rootRepo = 'D:\evorule'
+$rootRepo = Join-Path $siblingRoot 'evorule'
 if (Test-Path $rootRepo) {
     Invoke-Step '根仓数据格式门禁 (scan_repo_json.py → evorule)' {
-        python (Join-Path $root '..\evorule-system-rules\tools\scan_repo_json.py') --repo $rootRepo
+        python (Join-Path $root 'tools\scan_repo_json.py') --repo $rootRepo
     }
 } else {
     Write-Host "`n[SKIP] 根仓不存在($rootRepo)，跳过根仓门禁扫描"
 }
-$evoAgent = 'D:\evo-agent'
+$evoAgent = Join-Path $siblingRoot 'evo-agent'
 if (Test-Path $evoAgent) {
     Invoke-Step 'evo-agent 资产 schema 校验 (tools/check_evoagent_assets.py)' {
         python (Join-Path $root 'tools\check_evoagent_assets.py') $evoAgent

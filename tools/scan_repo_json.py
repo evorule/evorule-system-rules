@@ -72,7 +72,7 @@ EXEMPT_PATTERNS = [
 ]
 
 # 待迁移映射登记表（C6）：私造 $schema URI → 正式 kind 的迁移承诺。
-# 背景：evorule-application demo 规则是私造 DSL（trigger/condition/action,
+# 背景：应用层 demo 仓（私名不公开）的 demo 规则是私造 DSL（trigger/condition/action,
 # 由 application 仓自有解释器执行），与引擎原生 transform 不同构；迁移为
 # rule_set v1.0 需执行语义变更，另立小方案。迁移完成前在此登记映射关系,
 # 扫描以 [MAP] WARN 提示（不 FAIL）,但 URI 不得新增扩散（不在表内的
@@ -80,7 +80,7 @@ EXEMPT_PATTERNS = [
 PENDING_MIGRATION_URIS = {
     "https://evorule.com/schema/v1/rule.json": {
         "target_kind": "rule_set",
-        "scope": "evorule-application demo (agent-guard / compliance-gate)",
+        "scope": "application-layer demo (agent-guard / compliance-gate)",
         "note": "私造 DSL, 待执行语义变更小方案后迁移 rule_set v1.0",
     },
 }

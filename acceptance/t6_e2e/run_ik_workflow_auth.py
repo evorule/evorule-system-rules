@@ -5,7 +5,10 @@ import json
 import os
 import sys
 
-sys.path.insert(0, r"D:\yuanze-demos\client")
+# demos 仓默认按兄弟仓布局推导（<检出根>/yuanze-demos），可用 YUANZE_DEMOS 覆盖
+_demos_root = os.environ.get("YUANZE_DEMOS") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "yuanze-demos")
+sys.path.insert(0, os.path.join(_demos_root, "client"))
 from yuanze_client import YuanzeClient, _resolve_path  # noqa: E402
 
 

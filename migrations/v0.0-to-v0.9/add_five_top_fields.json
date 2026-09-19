@@ -8,7 +8,7 @@
   "metadata": {
     "title": "v0 → v0.9 添加 5 顶层字段",
     "description": "为旧 evorule JSON 添加 $schema / kind / id / version / metadata 字段(5 个固定顶层字段)。$schema URL 留待工具根据 kind 推导,id/created/updated 留待工具根据文件路径推导。",
-    "authors": ["mavis@evorulelab.com"],
+    "authors": ["evorulelab@gmail.com"],
     "created": "2026-08-23",
     "updated": "2026-08-23",
     "tags": ["migration", "v0_0", "v0_9", "bootstrap"]

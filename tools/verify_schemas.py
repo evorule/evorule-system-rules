@@ -15,10 +15,11 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCHEMAS_DIR = os.path.join(REPO_ROOT, "schemas")
 PASS, FAIL = 0, 1
 
-# 外部仓路径：可用环境变量覆盖（CI 传参），默认本机路径（与 tools/check_whitelist_sync.py 同约定）
-EVORULE_REPO = os.environ.get("EVORULE_REPO", r"D:\evorule")
-EVORULE_SERVER_REPO = os.environ.get("EVORULE_SERVER_REPO", r"D:\evorule-server")
-YUANZE_DEMOS = os.environ.get("YUANZE_DEMOS", r"D:\yuanze-demos")
+# 外部仓路径：可用环境变量覆盖（CI 传参），默认按兄弟仓布局推导（<检出根>/<repo>，与 tools/check_whitelist_sync.py 同约定）
+_CHECKOUT_ROOT = os.path.dirname(REPO_ROOT)
+EVORULE_REPO = os.environ.get("EVORULE_REPO") or os.path.join(_CHECKOUT_ROOT, "evorule")
+EVORULE_SERVER_REPO = os.environ.get("EVORULE_SERVER_REPO") or os.path.join(_CHECKOUT_ROOT, "evorule-server")
+YUANZE_DEMOS = os.environ.get("YUANZE_DEMOS") or os.path.join(_CHECKOUT_ROOT, "yuanze-demos")
 
 
 def load_registry():

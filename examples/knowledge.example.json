@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "metadata": {
     "title": "evorule 知识数据资产示例（文档 + 数据双形态）",
-    "description": "展示 evorule-system-rules v1.0 knowledge 双形态：文档知识条目（content）与数据资产条目（payload+schema_ref）。数据形态示例引用 rpsm 物理仿真场景 schema（领域仓资产，schema_ref 仅引用不内嵌）。注意 D:\\evorule-server\\docs\\PITFALLS.json 自身部分条目已过时（valid_domain_types 缺 has_fields、valid_meta_instructions 缺 collect/merge、P09/P17/P18 与现行 v0.3.1 引擎不一致），引用时需以 records/70 事实源清单为准；PITFALLS.json 本身属内部工具豁免文件，不入 knowledge 治理链。",
+    "description": "展示 evorule-system-rules v1.0 knowledge 双形态：文档知识条目（content）与数据资产条目（payload+schema_ref）。数据形态示例引用 rpsm 物理仿真场景 schema（领域仓资产，schema_ref 仅引用不内嵌）。注意 evorule-server 仓 docs/PITFALLS.json 自身部分条目已过时（valid_domain_types 缺 has_fields、valid_meta_instructions 缺 collect/merge、P09/P17/P18 与现行 v0.3.1 引擎不一致），引用时需以事实源清单为准；PITFALLS.json 本身属内部工具豁免文件，不入 knowledge 治理链。",
     "authors": ["eve@example.com"],
     "created": "2026-08-23",
     "updated": "2026-08-30",

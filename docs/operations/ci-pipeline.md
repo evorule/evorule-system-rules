@@ -147,7 +147,7 @@ foreach ($f in (Get-ChildItem schemas -Recurse -Filter '*.json')) {
 }
 
 # 5. Schema 闭环验收（真实文件 + 负向用例，末尾含白名单对齐闸）
-#    YUANZE_DEMOS 可选：不提供则脚本自动 SKIP 对应用例（默认 D:\yuanze-demos）
+#    YUANZE_DEMOS 可选：不提供则按兄弟仓布局自动推导（<检出根>/yuanze-demos），对应仓缺失时自动 SKIP 对应用例
 python _verify_schemas.py
 if ($LASTEXITCODE -ne 0) { exit 1 }
 

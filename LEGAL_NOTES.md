@@ -27,16 +27,16 @@
 
 ## 1. 与 evorule 主仓 license 文件的同步关系
 
-本仓根目录的下列 5 个文件**与 evorule 主仓(`D:\evorule\`)对应文件保持字节级同步**:
+本仓根目录的下列 6 个文件**与 evorule 主仓对应文件保持字节级同步**:
 
 | 本仓文件 | 来源 | 同步方式 |
 |---|---|---|
-| `LICENSE` | `D:\evorule\LICENSE` | AGPL-3.0 标准全文(FSF 发布,与主仓字节级一致) |
-| `COMMERCIAL_LICENSE.md` | `D:\evorule\COMMERCIAL_LICENSE.md` | 主仓商业许可协议摘要 |
-| `DUAL_LICENSE.md` | `D:\evorule\DUAL_LICENSE.md` | 主仓双重许可说明 + FAQ |
-| `FREE_COMMERCIAL_LICENSE.md` | `D:\evorule\FREE_COMMERCIAL_LICENSE.md` | 主仓非营利免费商业许可 |
-| `TRADEMARK.md` | `D:\evorule\TRADEMARK.md` | 主仓商标使用政策 |
-| `NOTICE.md` | `D:\evorule\NOTICE.md` | 主仓第三方归属声明 |
+| `LICENSE` | 主仓 `LICENSE` | AGPL-3.0 标准全文(FSF 发布,与主仓字节级一致) |
+| `COMMERCIAL_LICENSE.md` | 主仓 `COMMERCIAL_LICENSE.md` | 主仓商业许可协议摘要 |
+| `DUAL_LICENSE.md` | 主仓 `DUAL_LICENSE.md` | 主仓双重许可说明 + FAQ |
+| `FREE_COMMERCIAL_LICENSE.md` | 主仓 `FREE_COMMERCIAL_LICENSE.md` | 主仓非营利免费商业许可 |
+| `TRADEMARK.md` | 主仓 `TRADEMARK.md` | 主仓商标使用政策 |
+| `NOTICE.md` | 主仓 `NOTICE.md` | 主仓第三方归属声明 |
 
 **同步原则**:
 
