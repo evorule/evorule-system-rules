@@ -40,7 +40,9 @@ fn test_validate_rejects_temperature_out_of_range() {
     let errs = c.validate("agent_def", &bad).expect_err("must reject");
     let rendered: Vec<String> = errs.iter().map(|v| v.to_string()).collect();
     assert!(
-        rendered.iter().any(|s| s.contains("temperature") && s.contains("99")),
+        rendered
+            .iter()
+            .any(|s| s.contains("temperature") && s.contains("99")),
         "violation must point at temperature, got: {rendered:?}"
     );
 }
@@ -88,7 +90,7 @@ fn test_shelve_sanitizes_id_with_hyphen() {
     let c = Constitution::with_schemas_dir(repo_schemas());
     let mut body = valid_agent_body();
     body["agent_type"] = json!("rule-copilot"); // 连字符非法,_meta id pattern 会拒收裸透传
-    // 合成壳必须消毒后通过
+                                                // 合成壳必须消毒后通过
     assert!(c.validate("agent_def", &body).is_ok());
 }
 
@@ -117,8 +119,14 @@ fn test_unknown_kind_falls_back_gracefully() {
 
 #[test]
 fn test_violation_display_format() {
-    let v = Violation { path: "nodes/0/id".into(), message: "bad".into() };
+    let v = Violation {
+        path: "nodes/0/id".into(),
+        message: "bad".into(),
+    };
     assert_eq!(v.to_string(), "nodes/0/id: bad");
-    let root = Violation { path: String::new(), message: "root msg".into() };
+    let root = Violation {
+        path: String::new(),
+        message: "root msg".into(),
+    };
     assert_eq!(root.to_string(), "root msg");
 }
