@@ -30,6 +30,23 @@ function Invoke-Step {
     }
 }
 
+Invoke-Step 'python 环境预检 (jsonschema 可导入性)' {
+    # 防「存在但不可运行」的隐蔽失效：PATH 解析到的 python 若缺 jsonschema 模块，
+    # 后续步骤会以裸 ModuleNotFoundError 中断且不指明解释器来源——预检显式暴露两者。
+    $probe = & python -c "import sys, jsonschema; print(sys.executable)" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        $pyver = (& python --version 2>&1) -join ''
+        throw "当前 python（$pyver）缺少 jsonschema 模块——执行 'python -m pip install jsonschema' 后重跑；若为托管环境解释器，请先确认 PATH 指向预期 python"
+    }
+    Write-Host "[OK] python 解释器: $probe"
+}
+if ($failed) {
+    # 预检失败即终止：环境缺依赖时后续步骤注定连环 FAIL，无运行价值
+    $results | Format-Table -AutoSize
+    Pop-Location
+    Write-Host "VERIFY-ALL: FAIL（python 环境预检未通过，先修复环境再重跑）" -ForegroundColor Red
+    exit 1
+}
 Invoke-Step 'schema 闭环验收 (tools/verify_schemas.py)' {
     python (Join-Path $root 'tools\verify_schemas.py')
 }
