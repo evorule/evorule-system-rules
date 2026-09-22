@@ -55,9 +55,9 @@
 
 **义务的构成**(三条同时成立才算落挂):
 
-1. **使用共享校验实现**——判定逻辑来自统一组件(规划中的 `evorule-constitution` crate 或既有 core/rule_schema),禁止各应用复制第二份判定代码;应用差异只允许出现在接入点与缺失时的业务策略;
-2. **schema 数据走 SSOT**——从宪法仓运行时读取,或(全离线打包场景)登记进 `check_schema_sync.py` 同步清单的内嵌副本;
-3. **降级语义合规**——宪法数据不可得时 `warn + 最小结构门卫兜底`,不许静默空窗,也不许把部署环境缺陷升级为硬失败。
+1. **使用共享校验实现**——判定逻辑来自统一组件(`evorule-constitution` crate(已落地:0.2.0 起 schema 编译期内嵌;crates.io 发布前以 git 依赖+rev 钉版消费)或既有 core/rule_schema),禁止各应用复制第二份判定代码;应用差异只允许出现在接入点与缺失时的业务策略;
+2. **schema 数据走 SSOT**——优先经共享 crate 的编译期内嵌数据(include_str! 直读宪法仓 `schemas/` 母本,同仓 SSOT);跨仓内嵌副本(如 server core/rule_schema)须登记进 `check_schema_sync.py` 同步清单;
+3. **降级语义合规**——统一组件以 `Policy` 双模式承载(2026-09-22 收编裁定,与约束总表 §H 并存):缺省 `Strict`=schema 不可得即 fail-fast 拒绝(门禁语义,对齐 §H);非门禁消费方显式选用 `Lenient`=`warn + 最小结构门卫兜底`放行,不许静默空窗。内嵌模式下数据恒可得,"不可得"仅发生于显式目录模式指错路径——此时按 policy 分派,缺省拒绝。
 
 **例外及其依据**:
 
@@ -65,7 +65,7 @@
 |--------|------|
 | evorule 核心仓(evorule/evorule-tcb/governance 等) | 豁免本义务——代偿机制更强:TCB 运行期严格拒绝(未知指令当场拒收)承诺执行语义正确性,资产级发布审批(core_eval 流程)承诺来源正确性;两者合起来比 schema 预检更硬。**core 内部件因此恪守最小化**:governance 只做元指令白名单检查(审计链本职),刻意不承担 schema 全量校验——把重依赖与外部数据资产挡在核心仓之外是设计而非欠缺 |
 | evorule-server | ✅ 已达标(API 校验点 + hot_reload 逐文件门禁 + 副本同步守卫) |
-| evo-agent | ✅ 已达标(`src/agent/constitution.rs`,M7 落地) |
+| evo-agent | ✅ 已达标(`src/agent/constitution.rs` 薄封装委托统一 crate `evorule-constitution`;M7 落地,2026-09-22 收编后判定代码单一化) |
 | evorule-governance | ✅ 设计如此(见上表核心仓行):仅做元指令白名单,不补 schema 校验——曾误列为"半位缺口",2026-08-27 经项目方澄清为刻意设计并更正 |
 | 后续新应用(evorule-rule、白标实例) | 出生即带:项目模板内含共享 crate 依赖与最小接入 |
 | 运行宪法的属地分发(T8,2026-08-27) | 确立模式:核心仓 `core_eval.json` 仅承载引擎自评最小集(v0.4.0,原子+控制流+兜底);ReAct 等**应用剧本由消费方自持**——evo-agent 自带 `assets/agent_constitution.json`(app.evoagent.agent),示例应用自带 assets 副本,部署侧经 `paths.core_eval`/`--core_eval` 指向自有宪法。消费方测试夹具同样遵守本义务(不跨仓引用他仓资产) |
