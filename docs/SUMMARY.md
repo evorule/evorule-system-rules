@@ -36,6 +36,7 @@
 - [运维与发布](operations/README.md)
   - [发版流程](operations/release-process.md)
   - [CI 与校验流水线](operations/ci-pipeline.md)
+  - [schema 演进 SOP](operations/schema-evolution-sop.md)
 
 ---
 
