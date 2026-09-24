@@ -74,7 +74,7 @@ evorule agent 定义。
 
 ## kind: workflow_dag
 
-DAG workflow 定义（对齐 evo-agent Workflow 引擎；v1.0 与 v1.1 并存，v1.1 仅新增节点级可选 `run_when`）。
+DAG workflow 定义（对齐 evo-agent Workflow 引擎；v1.0/v1.1/v1.2 并存：v1.1 新增节点级 `run_when`，v1.2 新增顶层 `loops` 循环原语与节点级 `compute` 纯函数节点）。
 
 **body 字段**:
 
@@ -83,28 +83,40 @@ DAG workflow 定义（对齐 evo-agent Workflow 引擎；v1.0 与 v1.1 并存，
 | `workflow_id` | string | 是 | 工作流 id（`^[A-Za-z0-9_-]+$`） |
 | `description` | string | 否 | 人类可读描述 |
 | `nodes` | array\<node\> | 是 | ≥1 个节点（`depends_on` 内联隐式边表） |
-| `output_node` | string | 是 | 输出节点 id：其结果作为整个工作流的返回值 |
+| `loops` | array\<loop\> | 否 | **v1.2** 有界循环原语（加载/物化阶段静态展开为线性副本链，命名 `{loop_id}_iter{k}_{node_id}`；不支持嵌套） |
+| `output_node` | string | 是 | 输出节点 id：其结果作为整个工作流的返回值（可引用展开后副本名） |
 
 **node 子字段**:
 
 | 字段 | 类型 | 必填 | 约束 |
 |------|------|------|------|
-| `id` | string | 是 | `^[A-Za-z0-9_-]+$`（工作流内唯一） |
-| `agent_type` | string | 是 | `^[A-Za-z0-9_-]+$`（对应 `agents/<type>.json`） |
-| `task` | string | 否 | 静态任务描述（与 `task_template` 二选一，同时提供时后者优先） |
-| `task_template` | string | 否 | 可含 `{node_id}` 占位符，执行期被上游结果替换 |
-| `depends_on` | array\<string\> | 否 | 依赖节点 id 列表；环在拓扑排序期拒绝 |
-| `run_when` | object | 否 | **v1.1** 条件分支：`{ node, op, value }`；求值为假 → 跳过本节点，直接依赖被跳过节点的下游级联跳过（豁免需下游显式声明自己的 `run_when`） |
+| `id` | string | 是 | `^[A-Za-z0-9_-]+$`（工作流内唯一；loop.id 占用同一命名空间） |
+| `agent_type` | string | 条件 | `^[A-Za-z0-9_-]+$`（对应 `agents/<type>.json`）；**v1.2 起条件必填**：节点无 `compute` 时必填，含 `compute` 时禁止 |
+| `task` | string | 否 | 静态任务描述（与 `task_template` 二选一，同时提供时后者优先）；含 `compute` 时禁止 |
+| `task_template` | string | 否 | 可含 `{node_id}` 占位符，执行期被上游结果替换；循环体内可含 `{prev.X}`；含 `compute` 时禁止 |
+| `depends_on` | array\<string\> | 否 | 依赖节点 id 列表；环在展开后拓扑排序期拒绝 |
+| `run_when` | object | 否 | **v1.1** 条件分支：`{ node, op, value }`；求值为假 → 跳过本节点，直接依赖被跳过节点的下游级联跳过（豁免需下游显式声明自己的 `run_when`）；**v1.2** 起 `node` 允许 `prev.X`（仅循环体内，观察上一迭代副本） |
+| `compute` | object | 否 | **v1.2** 纯函数节点声明（见下） |
+
+**loop 子字段（v1.2）**:
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | string | 是 | 循环 id（展开命名前缀；不得与节点 id 冲突） |
+| `max_iterations` | integer | 是 | 静态迭代上界（1..=32，冻结限额） |
+| `body` | array\<node\> | 是 | 循环体节点 1..=8 个（即 node 形态，可含 compute/run_when/prev. 引用） |
+
+**compute 子字段（v1.2）**: 封闭函数目录（新增函数 = 新 schema 版本 + 治理评审）；不经 delegate、无 IO 无副作用。结果词表：`strcmp(equal)`→`equal\|different`、`strcmp(contains)`→`contained\|not_contained`、`numeric_cmp`→`true\|false`、`regex_match`→`match\|no_match`。收敛门控规范习语：后续迭代首节点 `run_when: { node: "prev.<check节点>", op: "not_contains", value: "equal" }`（iter0 空结果语义天然放行首轮）。
 
 **run_when 子字段（v1.1）**:
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `node` | string | 是 | 被观察节点 id（须位于本节点更早拓扑层；被跳过时视作空字符串） |
-| `op` | enum | 是 | `contains` / `equals` / `not_contains` |
+| `node` | string | 是 | 被观察节点 id（须位于本节点更早拓扑层；被跳过时视作空字符串）；**v1.2** 允许 `prev.X` |
+| `op` | enum | 是 | `contains` / `equals` / `not_contains`（自 v1.1 冻结） |
 | `value` | string | 是 | 期望值（与上游结果字符串比较） |
 
-**完整例子**: `examples/workflow_dag.example.json`（v1.0）、`examples/workflow_dag_v1.1.example.json`（v1.1）
+**完整例子**: `examples/workflow_dag.example.json`（v1.0）、`examples/workflow_dag_v1.1.example.json`（v1.1）、`examples/workflow_dag_v1.2.example.json`（v1.2）
 
 ## kind: service_registry
 

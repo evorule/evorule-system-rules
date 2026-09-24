@@ -1,0 +1,222 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/workflow_dag/v1.2.json",
+  "title": "evorule workflow_dag v1.2（新增有界循环原语 loop 与纯函数节点 compute）",
+  "description": "DAG workflow 定义（对应 evo-agent/rules/workflows/*.json）。v1.2 相对 v1.1 的增量（全部可选，向后兼容）：① 顶层可选字段 loops——有界循环原语，每项声明循环 id、静态上界 max_iterations（1..=32）与循环体 body（1..=8 个节点）；加载/物化阶段把循环体静态展开为线性副本链（编译器循环展开式），展开后仍是纯 DAG、无回边，Kahn 拓扑与环检测照常工作。展开命名规则：{loop_id}_iter{k}_{node_id}，k 从 0 递增（纯函数，同输入必同输出）。② 节点级可选字段 compute——纯函数节点：不经 delegate、不经 LLM、无 IO、无副作用（不产生 IoRequest），在执行层循环内同步内联执行；函数目录封闭首发仅 strcmp/numeric_cmp/regex_match 三种，目录外一律拒绝，新增函数 = 一次宪法 schema 版本变更 + 治理评审。③ node 的 agent_type 由恒必填放宽为条件必填（节点含 compute 时免填）——这是本版本唯一对既有 required 语义的修改，v1.0/v1.1 全部合法文档在 v1.2 下仍合法（纯增量证明见评审草案文档 §6）。④ 节点引用 pattern 扩展为允许 prev. 前缀：循环体内可用 prev.X 引用上一迭代中 X 的副本（prev. 前缀仅循环体内合法，循环体外出现于加载校验期拒绝；iter0 的 prev.X 视作无结果，按空字符串语义处理）。展开语义要点：迭代严格串行（iter k 任一节点不早于 iter k-1 全部节点完成，由展开器插入的隐式依赖保证）；被 run_when 跳过的迭代副本沿用 v1.1 跳过语义（级联跳过 + 占位符空字符串 + run_when 豁免级联）；展开后总节点数硬上限 512、展开前节点数与循环体大小由本 schema 限额，展开总量由加载器校验。不支持嵌套循环（本版本冻结）。多 loop 只支持链式/并列，循环体引用其他循环的副本节点必须写展开后全名。依据双版本协议（docs/adr/double-version-protocol.md），本版本为次版本变化：v1.0/v1.1 存量 JSON 仍可用、零迁移，无需 migration 通道。门卫约定延续：node.id / loop.id / agent_type ∈ [A-Za-z0-9_-]+（防占位符污染与路径穿越）、loop.id 不得与任何节点 id 或其他 loop.id 冲突、Kahn 环检测在展开后执行。加载侧按文档形态分派 schema 版本（v1.0/v1.1/v1.2 三版本并存，见评审草案文档 §5）。",
+  "x_legal_authority_notice": "本 schema 由 EvoRule 团队维护,以 CC0 1.0 公共领域奉献(见 schemas/LICENSE-SCHEMAS.md);通过本 schema 校验或创作的 system JSON 内容 IP 归作者所有,evorule 不主张。详见 ../../LEGAL_NOTES.md 与 ../../docs/adr/scope-split-ip-model.md",
+  "allOf": [
+    { "$ref": "../_meta/v1.0.json" },
+    {
+      "type": "object",
+      "required": ["workflow_id", "nodes", "output_node"],
+      "properties": {
+        "kind": { "const": "workflow_dag" },
+        "workflow_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "工作流 id（用于日志/加载）"
+        },
+        "description": { "type": "string" },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/node" }
+        },
+        "loops": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/loop" },
+          "description": "有界循环原语（v1.2 新增，可选）：每项在加载/物化阶段展开为 max_iterations 个迭代副本的线性链。循环体节点（body）的引用规则：depends_on / run_when.node / compute.inputs / task_template 占位符中——写循环体节点原名 X = 同一迭代内引用（须拓扑更早）；写 prev.X = 上一迭代的 X 副本（iter0 视作空结果）；写循环体外节点原名 = 引用全局节点（须全局拓扑更早）；写其他循环的展开全名（{loop_id}_iter{k}_{node_id}）= 跨循环引用。引用合法性（存在性/拓扑序/prev. 作用域）在展开后图上统一校验，拒绝即拒载。"
+        },
+        "output_node": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "输出节点 id：其结果作为整个工作流的返回值；若该节点被跳过，工作流以错误终止（无静默空结果）。可引用展开后副本名（如 {loop_id}_iter{k}_{node_id}，k 须小于该循环 max_iterations）。"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": ["id"],
+      "allOf": [
+        {
+          "if": { "not": { "required": ["compute"] } },
+          "then": { "required": ["agent_type"] }
+        },
+        {
+          "if": { "required": ["compute"] },
+          "then": {
+            "not": {
+              "anyOf": [
+                { "required": ["agent_type"] },
+                { "required": ["task"] },
+                { "required": ["task_template"] }
+              ]
+            }
+          }
+        }
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "节点 id（工作流内唯一，含循环体节点；被 depends_on / task_template 占位符 {id} / output_node / run_when.node / compute.inputs 引用）。标识符白名单防占位符污染。loop.id 亦占用同一命名空间，不得冲突。"
+        },
+        "agent_type": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "执行该节点的 agent 类型（agents/<agent_type>.json）。白名单防路径穿越。含 compute 字段的节点禁止提供本字段（compute 不经 delegate，无 agent 语义）。"
+        },
+        "task": {
+          "type": "string",
+          "description": "静态任务描述（与 task_template 二选一；同时提供时 task_template 优先）。compute 节点禁止提供本字段。"
+        },
+        "task_template": {
+          "type": "string",
+          "description": "任务模板：可含 {node_id} 占位符，执行期被上游节点结果替换；被跳过的上游节点占位符替换为空字符串。循环体内可含 {prev.X} 占位符（上一迭代副本结果）。compute 节点禁止提供本字段。"
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": "依赖的节点 id 列表（隐式边表）；须全部完成后本节点才执行；引用不存在节点/自依赖在加载校验期拒绝，环在展开后拓扑排序期拒绝；任一依赖被跳过时本节点级联跳过（除非本节点声明了 run_when）。跨迭代依赖不通过 depends_on 表达（展开器按迭代串行语义插入隐式依赖）；依赖上一迭代副本的数据引用用 prev. 前缀（run_when/compute.inputs/task_template 占位符）。"
+        },
+        "run_when": { "$ref": "#/$defs/run_when" },
+        "compute": { "$ref": "#/$defs/compute" }
+      }
+    },
+    "run_when": {
+      "type": "object",
+      "required": ["node", "op", "value"],
+      "additionalProperties": false,
+      "description": "节点级执行条件（v1.1 引入，v1.2 扩展 node 取值）：求值为真才执行本节点，为假则跳过。求值为纯函数：取被观察节点的结果字符串与 value 比较；被观察节点被跳过或尚无结果时视作空字符串。声明了 run_when 的节点豁免级联跳过（去留完全由自身条件决定）。v1.2 扩展：node 可写 prev.X（仅循环体内合法）——观察上一迭代中 X 副本的结果；iter0 的 prev.X 视作空字符串。",
+      "properties": {
+        "node": {
+          "type": "string",
+          "pattern": "^(prev\\.)?[A-Za-z0-9_-]+$",
+          "description": "被观察节点：原名 X（必须存在且位于本节点更早拓扑层；循环体内指向同迭代更早节点或全局更早节点）或 prev.X（仅循环体内合法，指向上一迭代副本，天然满足更早拓扑层）。引用不存在节点/同层或下游节点/循环体外使用 prev. 前缀，在加载校验期拒绝"
+        },
+        "op": {
+          "enum": ["contains", "equals", "not_contains"],
+          "description": "比较谓词（最小集，自 v1.1 冻结，v1.2 不扩种类）：contains=结果包含 value；equals=结果完全等于 value；not_contains=结果不包含 value"
+        },
+        "value": {
+          "type": "string",
+          "description": "期望值：与被观察节点的结果字符串做比较（compute 节点结果词表见 compute 定义，run_when 的 value 按词表字面量书写）"
+        }
+      }
+    },
+    "loop": {
+      "type": "object",
+      "required": ["id", "max_iterations", "body"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "循环 id（展开命名前缀：{loop_id}_iter{k}_{node_id}）。不得与任何节点 id 或其他 loop.id 冲突（加载校验期拒绝）。"
+        },
+        "max_iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "description": "静态迭代上界（展开副本数；实际执行迭代数由 run_when 提前退出决定，不会超出本上界）。上界 32 为冻结限额：展开后总节点数预算 = max_iterations × 循环体节点数，防审计链体积爆炸。"
+        },
+        "body": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/node" },
+          "description": "循环体节点（1..=8 个；超过 8 个在加载校验期拒绝，引导拆分为子工作流委托）。体内节点即 v1.2 node 形态（可含 compute / run_when / prev. 引用）。展开后第 k 迭代的副本 id = {loop_id}_iter{k}_{node_id}。"
+        }
+      }
+    },
+    "compute": {
+      "type": "object",
+      "description": "纯函数节点声明（v1.2 新增，可选；节点含本字段时不得再含 agent_type/task/task_template）。执行形态约束（D-03 拍板）：不经 delegate（不占 max_concurrent/max_depth）、在执行层循环内同步内联执行、无 IO 无副作用、不产生 IoRequest（单元测试断言链上 IoRequest 数量为 0）。函数目录封闭：新增函数 = 新 schema 版本 + 治理评审。结果词表（供下游 run_when/task_template 消费）：strcmp(mode=equal)→equal|different；strcmp(mode=contains)→contained|not_contained（inputs[0] 包含 inputs[1]）；numeric_cmp→true|false（inputs 解析为 IEEE 754 双精度数值，解析失败=节点失败=工作流终止，无静默回退）；regex_match→match|no_match（pattern 为 Rust regex crate 语法，加载期校验合法性，非法即拒载）。收敛门控规范习语（词表设计约束：different 不含 equal 子串，保证下式可表达）：循环体后续迭代首节点 run_when 写 { node: 'prev.<check节点>', op: 'not_contains', value: 'equal' }——上一迭代检查结果不含 equal（含 iter0 的空结果语义）→ 继续迭代；已收敛（equal）→ 提前退出。",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["function", "inputs", "mode"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "strcmp" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 2 个被比较节点：inputs[0] 与 inputs[1]"
+            },
+            "mode": {
+              "enum": ["equal", "contains"],
+              "description": "equal=比较两结果是否完全相等（收敛检测主用）；contains=inputs[0] 是否包含 inputs[1]"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs", "mode"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "numeric_cmp" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 2,
+              "items": { "$ref": "#/$defs/node_ref" }
+            },
+            "mode": {
+              "enum": ["lt", "le", "gt", "ge", "eq"],
+              "description": "数值比较模式（lt/le/gt/ge/eq）"
+            },
+            "threshold": {
+              "type": "number",
+              "description": "阈值（inputs 仅 1 个时必填且禁止第 2 个输入；inputs 2 个时禁止本字段，比较 inputs[0] 与 inputs[1]）"
+            }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "inputs": { "maxItems": 1 } }, "required": ["inputs"] },
+              "then": { "required": ["threshold"] }
+            },
+            {
+              "if": { "properties": { "inputs": { "minItems": 2 } }, "required": ["inputs"] },
+              "then": { "not": { "required": ["threshold"] } }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs", "pattern"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "regex_match" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" }
+            },
+            "pattern": {
+              "type": "string",
+              "minLength": 1,
+              "description": "正则（Rust regex crate 语法；加载期校验，非法即拒载）"
+            }
+          }
+        }
+      ]
+    },
+    "node_ref": {
+      "type": "string",
+      "pattern": "^(prev\\.)?[A-Za-z0-9_-]+$",
+      "description": "节点引用：原名 X=当前迭代（循环体外即全局）节点；prev.X=上一迭代副本（仅循环体内合法，加载校验期强检）"
+    }
+  }
+}
+

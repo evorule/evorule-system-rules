@@ -1,0 +1,60 @@
+{
+  "$schema": "https://evorule.org/schemas/workflow_dag/v1.2.json",
+  "kind": "workflow_dag",
+  "id": "com.example.workflow.bounded_refine",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "有界循环工作流示例（v1.2 loop + compute 收敛门控）",
+    "description": "展示 workflow_dag v1.2 新增能力：research 循环最多迭代 3 次（搜集→提炼→收敛检查），结果稳定即提前退出；check 为 compute 纯函数节点（strcmp），不经 LLM。收敛门控采用规范习语 not_contains equal（iter0 空结果语义天然放行首轮）。",
+    "authors": ["bob@example.com"],
+    "created": "2026-09-24",
+    "updated": "2026-09-24",
+    "tags": ["example", "workflow", "loop", "compute"],
+    "provenance": { "source": "manual" }
+  },
+  "workflow_id": "bounded_refine",
+  "description": "准备 → 最多 3 轮（搜索→提炼→收敛检查，结果与上一轮一致即提前退出）→ 定稿",
+  "nodes": [
+    {
+      "id": "prepare",
+      "agent_type": "planner",
+      "task": "明确调研主题与检索词"
+    },
+    {
+      "id": "finalize",
+      "agent_type": "writer",
+      "task_template": "基于最终提炼结果撰写报告：\n{research_iter2_refine}",
+      "depends_on": ["research_iter2_refine"]
+    }
+  ],
+  "loops": [
+    {
+      "id": "research",
+      "max_iterations": 3,
+      "body": [
+        {
+          "id": "search",
+          "agent_type": "researcher",
+          "task_template": "围绕主题搜集资料：\n{prepare}\n上一轮提炼（首轮无）：{prev.refine}",
+          "run_when": { "node": "prev.check", "op": "not_contains", "value": "equal" }
+        },
+        {
+          "id": "refine",
+          "agent_type": "analyst",
+          "task_template": "提炼本轮搜索结果为要点：\n{search}",
+          "depends_on": ["search"]
+        },
+        {
+          "id": "check",
+          "compute": {
+            "function": "strcmp",
+            "inputs": ["refine", "prev.refine"],
+            "mode": "equal"
+          },
+          "depends_on": ["refine"]
+        }
+      ]
+    }
+  ],
+  "output_node": "finalize"
+}

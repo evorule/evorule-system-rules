@@ -59,6 +59,11 @@ const WORKFLOW_DAG_V1_1: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../schemas/workflow_dag/v1.1.json"
 ));
+
+const WORKFLOW_DAG_V1_2: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../schemas/workflow_dag/v1.2.json"
+));
 const SERVICE_REGISTRY_V1_0: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../schemas/service_registry/v1.0.json"
@@ -93,6 +98,7 @@ const EMBEDDED: &[(&str, &str, &str)] = &[
     ("agent_def", "v1.0", AGENT_DEF_V1_0),
     ("workflow_dag", "v1.0", WORKFLOW_DAG_V1_0),
     ("workflow_dag", "v1.1", WORKFLOW_DAG_V1_1),
+    ("workflow_dag", "v1.2", WORKFLOW_DAG_V1_2),
     ("service_registry", "v1.0", SERVICE_REGISTRY_V1_0),
     ("rule_set", "v1.0", RULE_SET_V1_0),
     ("knowledge", "v1.0", KNOWLEDGE_V1_0),

@@ -4,6 +4,21 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/),
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [v1.2.0] - 2026-09-24
+
+### 新增
+- `workflow_dag/v1.2` schema（plan-execute 动态循环前置能力，双版本协议次版本增量，v1.0/v1.1 存量零迁移）：
+  - 顶层可选 `loops`：有界循环原语（`max_iterations` 1..=32、循环体 1..=8 节点），加载/物化阶段静态展开为线性副本链（命名 `{loop_id}_iter{k}_{node_id}`），展开后仍是纯 DAG；不支持嵌套（本版本冻结）
+  - 节点级可选 `compute`：纯函数节点（封闭函数目录首发 `strcmp`/`numeric_cmp`/`regex_match`；不经 delegate、无 IO、无副作用；结果词表 `equal|different`、`contained|not_contained`、`true|false`、`match|no_match`；收敛门控规范习语 `not_contains "equal"`）
+  - 节点引用 pattern 扩展 `prev.` 前缀：循环体内跨迭代引用上一迭代副本（仅循环体内合法，iter0 空结果语义）
+  - `node.agent_type` 由恒必填放宽为条件必填（含 `compute` 时禁止 `agent_type`/`task`/`task_template`）——唯一 required 语义修改
+- 示例 `examples/workflow_dag_v1.2.example.json`（有界循环 + compute 收敛门控）
+- `evorule-constitution` crate 0.3.0：内嵌 v1.2 schema（build.rs 清单 + EMBEDDED 表随动）
+
+### 评审与修正
+- v1.2 草案经项目方批准（含 agent_type 条件化放行、compute 结果词表冻结）；实施期修正：strcmp(equal) 输出 `not_equal` → `different`（原词表下 `not_contains` 无法区分收敛态，收敛提前退出不可表达；词表冻结承诺不变）
+- schema 正反用例 13/13 通过（含 compute 与 agent_type/task 互斥封口）；v1.0/v1.1 示例在 v1.2 下仍合法（纯增量证明）
+
 ## [v1.1.0] - 2026-09-19
 
 ### 新增
