@@ -1,0 +1,28 @@
+{
+  "$schema": "https://evorule.org/schemas/agent_def/v1.1.json",
+  "kind": "agent_def",
+  "id": "com.example.agent.researcher",
+  "version": "1.1.0",
+  "metadata": {
+    "title": "研究型 agent 示例（v1.1：能力边界声明）",
+    "description": "展示 agent_def v1.1 增量字段 capability_boundary：声明 agent 的文件访问模式/沙箱根/边界内工具。声明是沙箱检查的唯一权威，并在会话建立时注入边界事实（agent 自知边界）。",
+    "authors": ["bob@example.com"],
+    "created": "2026-08-23",
+    "updated": "2026-09-25",
+    "tags": ["example", "agent"],
+    "provenance": { "source": "manual" }
+  },
+  "agent_type": "researcher",
+  "description": "Research agent — summary and search",
+  "system_prompt": "You are a careful research assistant.",
+  "model": "MiniMax-M2.5",
+  "temperature": 0.3,
+  "max_steps": 20,
+  "step_timeout_secs": 60,
+  "tools": ["file_read", "search_files", "file_list"],
+  "capability_boundary": {
+    "mode": "read_only",
+    "sandbox_root": "D:/evo-agent",
+    "tools": ["file_read", "search_files", "file_list"]
+  }
+}

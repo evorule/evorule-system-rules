@@ -4,6 +4,16 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/),
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [v1.3.0] - 2026-09-25
+
+### 新增
+- `agent_def/v1.1` schema：顶层可选 `capability_boundary`（能力边界声明：`{ mode: "read_only"|"read_write", sandbox_root, tools }` 三键必填）。声明是 file 类工具沙箱检查的唯一权威；会话建立时注入边界事实（agent 自知边界）。依据双版本协议属次版本增量：v1.0 存量 JSON 零迁移可用（未声明 = 行为同 v1.0）
+- 示例 `examples/agent_def_v1.1.example.json`（read_only 边界声明）
+- `evorule-constitution` crate 0.3.1：内嵌 v1.1 schema（build.rs 清单 + EMBEDDED 表随动）
+
+### 修正
+- `docs/reference/schema-reference.md` agent_def 段：移除残留的未采纳草案描述（`capabilities`/`prompt_ref`/`model_config`——2026-08-27 已被真实结构否决），对齐 v1.0 真值（`system_prompt` 内联、`model`/`temperature` 平铺）并补充 v1.1 增量字段
+
 ## [v1.2.0] - 2026-09-24
 
 ### 新增

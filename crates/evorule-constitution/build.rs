@@ -13,6 +13,7 @@
 fn main() {
     const SCHEMAS: &[&str] = &[
         "agent_def/v1.0.json",
+        "agent_def/v1.1.json",
         "workflow_dag/v1.0.json",
         "workflow_dag/v1.1.json",
         "workflow_dag/v1.2.json",

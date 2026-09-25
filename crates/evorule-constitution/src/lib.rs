@@ -51,6 +51,10 @@ const AGENT_DEF_V1_0: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../schemas/agent_def/v1.0.json"
 ));
+const AGENT_DEF_V1_1: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../schemas/agent_def/v1.1.json"
+));
 const WORKFLOW_DAG_V1_0: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../schemas/workflow_dag/v1.0.json"
@@ -96,6 +100,7 @@ const SHARED_V1_0: &str = include_str!(concat!(
 /// 需要时走显式目录模式。
 const EMBEDDED: &[(&str, &str, &str)] = &[
     ("agent_def", "v1.0", AGENT_DEF_V1_0),
+    ("agent_def", "v1.1", AGENT_DEF_V1_1),
     ("workflow_dag", "v1.0", WORKFLOW_DAG_V1_0),
     ("workflow_dag", "v1.1", WORKFLOW_DAG_V1_1),
     ("workflow_dag", "v1.2", WORKFLOW_DAG_V1_2),

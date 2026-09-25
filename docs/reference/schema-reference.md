@@ -59,18 +59,33 @@
 
 ## kind: agent_def
 
-evorule agent 定义。
+evorule agent 定义（v1.0/v1.1 并存；v1.0 真值 = `system_prompt` 内联、`model`/`temperature` 平铺顶层——原 D5 草案的 `capabilities`/`prompt_ref`/`model_config` 已被真实结构否决）。
 
-**body 字段**:
+**body 字段（v1.0）**:
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `capabilities` | array\<string\> | 是 | ≥1 个能力,如 `web_search` / `document_read` |
-| `tools` | array\<string\> | 否 | 可调用的工具名,对应 `service_registry` |
-| `prompt_ref` | string | 是 | system prompt 引用(文件路径或 URL) |
-| `model_config` | object | 否 | `{ provider, model, temperature, max_tokens }` |
+| `agent_type` | string | 是 | `^[A-Za-z0-9_-]+$`（文件名 `agents/<agent_type>.json`，防路径穿越） |
+| `version` | string | 是 | 定义内容版本号 |
+| `description` | string | 是 | ≥1 字符 |
+| `system_prompt` | string | 是 | 内联 system prompt 全文 |
+| `model` | string | 是 | 模型名 |
+| `temperature` | number | 是 | ∈[0,2] |
+| `max_steps` | integer | 是 | ≥1 |
+| `step_timeout_secs` | integer | 是 | ≥1 |
+| `tools` | array\<string\> | 是 | 可用工具清单 |
+| `memory` | object | 否 | 内存配置（type: none\|persistent 等） |
+| `output_format` | object\|null | 否 | 输出格式配置 |
+| `context_window_tokens` | integer | 否 | 上下文窗口 token 数（≥1，默认 8192） |
+| `max_parallel_tools` | integer | 否 | 单轮并行工具调用上限（≥1，默认 1 = 串行） |
 
-**完整例子**: `examples/agent_def.example.json`
+**v1.1 增量字段**:
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `capability_boundary` | object | 否 | 能力边界声明：`{ mode: "read_only"\|"read_write", sandbox_root: string(绝对路径), tools: array\<string\> }`（三键必填）。声明是 file 类工具沙箱检查的唯一权威；会话建立时注入边界事实（agent 自知边界）。语义约束（加载侧门卫）：顶层 `tools` 中沙箱类工具必须列于 `capability_boundary.tools`；`mode=read_only` 时不得含 `file_write`。未声明 = 行为同 v1.0（启动配置合成缺省边界） |
+
+**完整例子**: `examples/agent_def.example.json`（v1.0）/ `examples/agent_def_v1.1.example.json`（v1.1）
 
 ## kind: workflow_dag
 

@@ -147,6 +147,42 @@ fn test_validate_accepts_real_shape() {
     assert!(c.validate("workflow_dag", &wf).is_ok());
 }
 
+// ===== agent_def v1.1:capability_boundary 增量 =====
+
+#[test]
+fn test_agent_def_v11_via_version_param() {
+    let c = Constitution::new();
+    assert_eq!(c.status_version("agent_def", "v1.1"), SchemaStatus::Loaded);
+    // v1.1:带 capability_boundary 的文档合法
+    let mut with_boundary = valid_agent_body();
+    with_boundary["capability_boundary"] = json!({
+        "mode": "read_only",
+        "sandbox_root": "D:/evo-agent",
+        "tools": ["file_read"]
+    });
+    assert!(c
+        .validate_version("agent_def", "v1.1", &with_boundary)
+        .is_ok());
+    // 三键任一缺失 → 拒
+    let mut missing_root = with_boundary.clone();
+    missing_root["capability_boundary"]
+        .as_object_mut()
+        .unwrap()
+        .remove("sandbox_root");
+    assert!(c
+        .validate_version("agent_def", "v1.1", &missing_root)
+        .is_err());
+    // mode 取值越界 → 拒
+    let mut bad_mode = with_boundary.clone();
+    bad_mode["capability_boundary"]["mode"] = json!("read_write_all");
+    assert!(c.validate_version("agent_def", "v1.1", &bad_mode).is_err());
+    // 同一文档按 v1.0 校验:v1.0 无该键定义(未封口放行),仅断言版本分派有效——
+    // v1.0 存量文档零迁移(不写 capability_boundary 即可)
+    assert!(c
+        .validate_version("agent_def", "v1.0", &with_boundary)
+        .is_ok());
+}
+
 #[test]
 fn test_workflow_empty_nodes_rejected() {
     let c = Constitution::new();
