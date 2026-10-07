@@ -4,6 +4,15 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/),
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [v1.4.0] - 2026-10-07
+
+### 新增
+- `workflow_dag/v1.3` schema（compute 纯函数目录扩展，双版本协议次版本增量，v1.0/v1.1/v1.2 存量零迁移，四版本并存）：函数目录由 3 种扩展为 27 种，新增 24 种——算术 `add/sub/mul/div/abs/min/max`（i64 域，div 零=节点失败）、字符串 `concat/length/upper/lower/trim/replace/split_at/substr/join`（按 Unicode char 计数与索引，字面操作非正则）、日期 `epoch_to_date/date_diff_days/epoch_add_days`（仅 UTC、仅显式入参、日期域 0000-01-01..=9999-12-31，无本地时区无当前时间函数——确定性红线）、逻辑 `and/or/not/if_else/clamp`（条件值取封闭布尔词表 true|false，不隐式真值化）
+- 错误语义总纲（全目录统一 fail-fast，沿用 numeric_cmp 既有口径）：数值解析失败/除零/整数溢出/索引越界/日期域外/条件值不在词表/分隔符或查找串为空 = 节点失败 = 工作流终止，无静默回退
+- 示例 `examples/workflow_dag_v1.3.example.json`（事件台账解析：拆列/归一化/UTC 日期推导/布尔联检，7 个新函数与既有函数组合）
+- `docs/reference/schema-reference.md` workflow_dag 段随动（v1.3 增量、词表总表、常量参数位置规范）
+- `evorule-constitution` crate 0.3.2：内嵌 v1.3 schema（build.rs 清单 + EMBEDDED 表随动）
+
 ## [v1.3.0] - 2026-09-25
 
 ### 新增

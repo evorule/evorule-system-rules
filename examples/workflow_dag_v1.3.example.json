@@ -1,0 +1,96 @@
+{
+  "$schema": "https://evorule.org/schemas/workflow_dag/v1.3.json",
+  "kind": "workflow_dag",
+  "id": "com.example.workflow.event_ledger_parse",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "事件台账解析工作流示例（v1.3 compute 函数目录扩展）",
+    "description": "展示 workflow_dag v1.3 新增 compute 函数：split_at/upper/join（字符串族）、epoch_to_date/epoch_add_days/date_diff_days（UTC 日期族，仅显式入参）、and（布尔词表族），并与 v1.2 既有 numeric_cmp/regex_match 组合。复合计算以 DAG 节点组合表达（无内嵌表达式语法）。全部 compute 节点不经 LLM、无 IO 无副作用，错误即节点失败（fail-fast）。",
+    "authors": ["bob@example.com"],
+    "created": "2026-10-07",
+    "updated": "2026-10-07",
+    "tags": ["example", "workflow", "compute", "formula"],
+    "provenance": { "source": "manual" }
+  },
+  "workflow_id": "event_ledger_parse",
+  "description": "录入一行事件台账（竖线分隔：来源|epoch秒|金额|订单号）→ 拆列/归一化/UTC 日期推导/到期日与在途天数计算/大额与格式联检 → 汇总",
+  "nodes": [
+    {
+      "id": "ingest",
+      "agent_type": "intake",
+      "task": "原样输出一行事件台账记录：evt|1791331200|1200|ord_889（四段竖线分隔：来源|Unix epoch 秒|金额|订单号）"
+    },
+    {
+      "id": "epoch_part",
+      "compute": { "function": "split_at", "inputs": ["ingest"], "separator": "|", "index": 1 },
+      "depends_on": ["ingest"]
+    },
+    {
+      "id": "amount_part",
+      "compute": { "function": "split_at", "inputs": ["ingest"], "separator": "|", "index": 2 },
+      "depends_on": ["ingest"]
+    },
+    {
+      "id": "order_part",
+      "compute": { "function": "split_at", "inputs": ["ingest"], "separator": "|", "index": 3 },
+      "depends_on": ["ingest"]
+    },
+    {
+      "id": "event_day",
+      "compute": { "function": "epoch_to_date", "inputs": ["epoch_part"] },
+      "depends_on": ["epoch_part"]
+    },
+    {
+      "id": "due_epoch",
+      "compute": { "function": "epoch_add_days", "inputs": ["epoch_part"], "days": 7 },
+      "depends_on": ["epoch_part"]
+    },
+    {
+      "id": "due_day",
+      "compute": { "function": "epoch_to_date", "inputs": ["due_epoch"] },
+      "depends_on": ["due_epoch"]
+    },
+    {
+      "id": "span_days",
+      "compute": { "function": "date_diff_days", "inputs": ["event_day", "due_day"] },
+      "depends_on": ["event_day", "due_day"]
+    },
+    {
+      "id": "normalized_order",
+      "compute": { "function": "upper", "inputs": ["order_part"] },
+      "depends_on": ["order_part"]
+    },
+    {
+      "id": "amount_ok",
+      "compute": { "function": "numeric_cmp", "inputs": ["amount_part"], "mode": "ge", "threshold": 1000 },
+      "depends_on": ["amount_part"]
+    },
+    {
+      "id": "span_ok",
+      "compute": { "function": "numeric_cmp", "inputs": ["span_days"], "mode": "eq", "threshold": 7 },
+      "depends_on": ["span_days"]
+    },
+    {
+      "id": "order_shape_ok",
+      "compute": { "function": "regex_match", "inputs": ["normalized_order"], "pattern": "ORD_[0-9]+" },
+      "depends_on": ["normalized_order"]
+    },
+    {
+      "id": "escalate",
+      "compute": { "function": "and", "inputs": ["amount_ok", "span_ok"] },
+      "depends_on": ["amount_ok", "span_ok"]
+    },
+    {
+      "id": "summary",
+      "compute": { "function": "join", "inputs": ["normalized_order", "event_day", "due_day", "amount_part"], "separator": " " },
+      "depends_on": ["normalized_order", "event_day", "due_day", "amount_part"]
+    },
+    {
+      "id": "report",
+      "agent_type": "writer",
+      "task_template": "台账行 {ingest} 解析完成。\n归一化订单号与关键日期：{summary}（在途 {span_days} 天）。\n大额且格式合规（true/false）：{escalate}。请按上述事实出具台账登记摘要。",
+      "depends_on": ["summary", "span_days", "escalate"]
+    }
+  ],
+  "output_node": "report"
+}

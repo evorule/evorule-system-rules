@@ -89,7 +89,7 @@ evorule agent 定义（v1.0/v1.1 并存；v1.0 真值 = `system_prompt` 内联�
 
 ## kind: workflow_dag
 
-DAG workflow 定义（对齐 evo-agent Workflow 引擎；v1.0/v1.1/v1.2 并存：v1.1 新增节点级 `run_when`，v1.2 新增顶层 `loops` 循环原语与节点级 `compute` 纯函数节点）。
+DAG workflow 定义（对齐 evo-agent Workflow 引擎；v1.0/v1.1/v1.2/v1.3 并存：v1.1 新增节点级 `run_when`，v1.2 新增顶层 `loops` 循环原语与节点级 `compute` 纯函数节点，v1.3 扩展 `compute` 函数目录至 27 种）。
 
 **body 字段**:
 
@@ -121,7 +121,7 @@ DAG workflow 定义（对齐 evo-agent Workflow 引擎；v1.0/v1.1/v1.2 并存�
 | `max_iterations` | integer | 是 | 静态迭代上界（1..=32，冻结限额） |
 | `body` | array\<node\> | 是 | 循环体节点 1..=8 个（即 node 形态，可含 compute/run_when/prev. 引用） |
 
-**compute 子字段（v1.2）**: 封闭函数目录（新增函数 = 新 schema 版本 + 治理评审）；不经 delegate、无 IO 无副作用。结果词表：`strcmp(equal)`→`equal\|different`、`strcmp(contains)`→`contained\|not_contained`、`numeric_cmp`→`true\|false`、`regex_match`→`match\|no_match`。收敛门控规范习语：后续迭代首节点 `run_when: { node: "prev.<check节点>", op: "not_contains", value: "equal" }`（iter0 空结果语义天然放行首轮）。
+**compute 子字段（v1.2 引入，v1.3 扩展）**: 封闭函数目录 27 种（新增函数 = 新 schema 版本 + 治理评审）；不经 delegate、无 IO 无副作用。错误语义总纲（fail-fast）：数值解析失败/除零/整数溢出/索引越界/日期域外/条件值不在词表/分隔符或查找串为空 = 节点失败 = 工作流终止，无静默回退。结果词表：`strcmp(equal)`→`equal\|different`、`strcmp(contains)`→`contained\|not_contained`、`numeric_cmp`→`true\|false`、`regex_match`→`match\|no_match`、`and/or/not`→`true\|false`、算术与整数族（`add/sub/mul/div/abs/min/max/clamp/length/date_diff_days/epoch_add_days`）→十进制整数字符串、`epoch_to_date`→`YYYY-MM-DD`（UTC 固定，日期域 0000-01-01..=9999-12-31）、字符串族（`concat/join/upper/lower/trim/replace/split_at/substr`）与 `if_else`→原样字符串。**v1.3 新增 24 函数**：算术 `add/sub/mul/div/abs/min/max`（i64 域）、字符串 `concat/length/upper/lower/trim/replace/split_at/substr/join`（按 Unicode char 计数与索引，字面操作非正则）、日期 `epoch_to_date/date_diff_days/epoch_add_days`（仅 UTC、仅显式入参、无当前时间类函数）、逻辑 `and/or/not/if_else/clamp`（条件值取封闭布尔词表 true\|false，不隐式真值化）。常量参数（threshold/mode/pattern/separator/index/start/length/find/replacement/days/min_val/max_val）写在 compute 对象上与 function/inputs 平级；inputs 数组只能放节点引用。收敛门控规范习语：后续迭代首节点 `run_when: { node: "prev.<check节点>", op: "not_contains", value: "equal" }`（iter0 空结果语义天然放行首轮）。
 
 **run_when 子字段（v1.1）**:
 
@@ -131,7 +131,7 @@ DAG workflow 定义（对齐 evo-agent Workflow 引擎；v1.0/v1.1/v1.2 并存�
 | `op` | enum | 是 | `contains` / `equals` / `not_contains`（自 v1.1 冻结） |
 | `value` | string | 是 | 期望值（与上游结果字符串比较） |
 
-**完整例子**: `examples/workflow_dag.example.json`（v1.0）、`examples/workflow_dag_v1.1.example.json`（v1.1）、`examples/workflow_dag_v1.2.example.json`（v1.2）
+**完整例子**: `examples/workflow_dag.example.json`（v1.0）、`examples/workflow_dag_v1.1.example.json`（v1.1）、`examples/workflow_dag_v1.2.example.json`（v1.2）、`examples/workflow_dag_v1.3.example.json`（v1.3）
 
 ## kind: service_registry
 

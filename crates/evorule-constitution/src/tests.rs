@@ -98,6 +98,39 @@ fn test_workflow_dag_v11_via_version_param() {
         .is_err());
 }
 
+#[test]
+fn test_workflow_dag_v13_new_functions_dispatch() {
+    let c = Constitution::new();
+    assert_eq!(
+        c.status_version("workflow_dag", "v1.3"),
+        SchemaStatus::Loaded
+    );
+    // v1.3 新函数（compute add）在 v1.3 下合法
+    let wf_v13 = json!({
+        "workflow_id": "w", "description": "",
+        "nodes": [
+            {"id": "a", "agent_type": "intake", "task": "t"},
+            {"id": "b", "agent_type": "intake", "task": "t"},
+            {"id": "s", "compute": {"function": "add", "inputs": ["a", "b"]}, "depends_on": ["a", "b"]}
+        ],
+        "output_node": "s"
+    });
+    assert!(c.validate_version("workflow_dag", "v1.3", &wf_v13).is_ok());
+    // 同一文档按 v1.2 校验：add 不在 v1.2 封闭目录（3 函数），oneOf 无分支匹配必拒
+    assert!(c.validate_version("workflow_dag", "v1.2", &wf_v13).is_err());
+    // v1.3 目录外函数同样必拒（目录封闭，新增函数 = 新 schema 版本 + 治理评审）
+    let wf_out = json!({
+        "workflow_id": "w", "description": "",
+        "nodes": [
+            {"id": "a", "agent_type": "intake", "task": "t"},
+            {"id": "b", "agent_type": "intake", "task": "t"},
+            {"id": "s", "compute": {"function": "pow", "inputs": ["a", "b"]}, "depends_on": ["a", "b"]}
+        ],
+        "output_node": "s"
+    });
+    assert!(c.validate_version("workflow_dag", "v1.3", &wf_out).is_err());
+}
+
 // ===== 显式目录模式 =====
 
 #[test]

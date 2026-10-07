@@ -17,6 +17,7 @@ fn main() {
         "workflow_dag/v1.0.json",
         "workflow_dag/v1.1.json",
         "workflow_dag/v1.2.json",
+        "workflow_dag/v1.3.json",
         "service_registry/v1.0.json",
         "rule_set/v1.0.json",
         "knowledge/v1.0.json",

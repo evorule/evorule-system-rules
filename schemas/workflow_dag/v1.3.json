@@ -1,0 +1,626 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/workflow_dag/v1.3.json",
+  "title": "evorule workflow_dag v1.3（compute 纯函数目录扩展：算术/字符串/日期/逻辑 24 函数）",
+  "description": "DAG workflow 定义（对应 evo-agent/rules/workflows/*.json）。v1.3 相对 v1.2 的增量（全部可选，向后兼容）：① compute 纯函数节点目录由 v1.2 的 3 种（strcmp/numeric_cmp/regex_match）扩展为 27 种，新增 24 种：算术 add/sub/mul/div/abs/min/max（有符号 64 位整数域）；字符串 concat/length/upper/lower/trim/replace/split_at/substr/join（按 Unicode 字符计数与索引，字面操作非正则）；日期 epoch_to_date/date_diff_days/epoch_add_days（仅 UTC、仅显式入参、日期域固定 0000-01-01..=9999-12-31，无本地时区无当前时间——确定性红线：时间只能经参数显式传入并进审计链）；逻辑 and/or/not/if_else/clamp（条件值取封闭布尔词表 true|false）。② 错误语义总纲（沿用 v1.2 numeric_cmp 既有口径，全目录统一）：数值解析失败 / 除零 / 整数溢出 / 索引越界 / 日期域外 / 条件值不在词表 / 分隔符或查找串为空，一律=节点失败=工作流终止（无静默回退、无默认值兜底）。③ 结果词表总表（供下游 run_when/task_template 消费）：strcmp→equal|different / contained|not_contained；numeric_cmp→true|false；regex_match→match|no_match；and/or/not→true|false；add/sub/mul/div/abs/min/max/clamp/length/date_diff_days/epoch_add_days→十进制整数字符串（可带负号）；epoch_to_date→YYYY-MM-DD；concat/join/upper/lower/trim/replace/split_at/substr/if_else→原样字符串（无词表）。复合表达式以 DAG 节点组合表达（a=mul(x,y) → b=add(a,z)），本目录不做内嵌表达式语法解析器（schema 中不出现自由字符串代码面）。函数目录封闭：新增函数 = 新 schema 版本 + 治理评审。依据双版本协议（docs/adr/double-version-protocol.md），本版本为次版本变化：v1.0/v1.1/v1.2 存量 JSON 仍可用、零迁移，无需 migration 通道，四版本并存，加载侧按文档形态分派 schema 版本。门卫约定全部延续 v1.2：node.id / loop.id / agent_type ∈ [A-Za-z0-9_-]+、loops 静态展开（展开命名 {loop_id}_iter{k}_{node_id}）、Kahn 环检测在展开后执行、展开后总节点数上限 512。",
+  "x_legal_authority_notice": "本 schema 由 EvoRule 团队维护,以 CC0 1.0 公共领域奉献(见 schemas/LICENSE-SCHEMAS.md);通过本 schema 校验或创作的 system JSON 内容 IP 归作者所有,evorule 不主张。详见 ../../LEGAL_NOTES.md 与 ../../docs/adr/scope-split-ip-model.md",
+  "allOf": [
+    { "$ref": "../_meta/v1.0.json" },
+    {
+      "type": "object",
+      "required": ["workflow_id", "nodes", "output_node"],
+      "properties": {
+        "kind": { "const": "workflow_dag" },
+        "workflow_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "工作流 id（用于日志/加载）"
+        },
+        "description": { "type": "string" },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/node" }
+        },
+        "loops": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/loop" },
+          "description": "有界循环原语（v1.2 引入，v1.3 原样延续）：每项在加载/物化阶段展开为 max_iterations 个迭代副本的线性链。循环体节点（body）的引用规则：depends_on / run_when.node / compute.inputs / task_template 占位符中——写循环体节点原名 X = 同一迭代内引用（须拓扑更早）；写 prev.X = 上一迭代的 X 副本（iter0 视作空结果）；写循环体外节点原名 = 引用全局节点（须全局拓扑更早）；写其他循环的展开全名（{loop_id}_iter{k}_{node_id}）= 跨循环引用。引用合法性（存在性/拓扑序/prev. 作用域）在展开后图上统一校验，拒绝即拒载。"
+        },
+        "output_node": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "输出节点 id：其结果作为整个工作流的返回值；若该节点被跳过，工作流以错误终止（无静默空结果）。可引用展开后副本名（如 {loop_id}_iter{k}_{node_id}，k 须小于该循环 max_iterations）。"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": ["id"],
+      "allOf": [
+        {
+          "if": { "not": { "required": ["compute"] } },
+          "then": { "required": ["agent_type"] }
+        },
+        {
+          "if": { "required": ["compute"] },
+          "then": {
+            "not": {
+              "anyOf": [
+                { "required": ["agent_type"] },
+                { "required": ["task"] },
+                { "required": ["task_template"] }
+              ]
+            }
+          }
+        }
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "节点 id（工作流内唯一，含循环体节点；被 depends_on / task_template 占位符 {id} / output_node / run_when.node / compute.inputs 引用）。标识符白名单防占位符污染。loop.id 亦占用同一命名空间，不得冲突。"
+        },
+        "agent_type": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "执行该节点的 agent 类型（agents/<agent_type>.json）。白名单防路径穿越。含 compute 字段的节点禁止提供本字段（compute 不经 delegate，无 agent 语义）。"
+        },
+        "task": {
+          "type": "string",
+          "description": "静态任务描述（与 task_template 二选一；同时提供时 task_template 优先）。compute 节点禁止提供本字段。"
+        },
+        "task_template": {
+          "type": "string",
+          "description": "任务模板：可含 {node_id} 占位符，执行期被上游节点结果替换；被跳过的上游节点占位符替换为空字符串。循环体内可含 {prev.X} 占位符（上一迭代副本结果）。compute 节点禁止提供本字段。"
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": "依赖的节点 id 列表（隐式边表）；须全部完成后本节点才执行；引用不存在节点/自依赖在加载校验期拒绝，环在展开后拓扑排序期拒绝；任一依赖被跳过时本节点级联跳过（除非本节点声明了 run_when）。跨迭代依赖不通过 depends_on 表达（展开器按迭代串行语义插入隐式依赖）；依赖上一迭代副本的数据引用用 prev. 前缀（run_when/compute.inputs/task_template 占位符）。"
+        },
+        "run_when": { "$ref": "#/$defs/run_when" },
+        "compute": { "$ref": "#/$defs/compute" }
+      }
+    },
+    "run_when": {
+      "type": "object",
+      "required": ["node", "op", "value"],
+      "additionalProperties": false,
+      "description": "节点级执行条件（v1.1 引入，v1.2/v1.3 原样延续）：求值为真才执行本节点，为假则跳过。求值为纯函数：取被观察节点的结果字符串与 value 比较；被观察节点被跳过或尚无结果时视作空字符串。声明了 run_when 的节点豁免级联跳过（去留完全由自身条件决定）。node 可写 prev.X（仅循环体内合法）——观察上一迭代中 X 副本的结果；iter0 的 prev.X 视作空字符串。",
+      "properties": {
+        "node": {
+          "type": "string",
+          "pattern": "^(prev\\.)?[A-Za-z0-9_-]+$",
+          "description": "被观察节点：原名 X（必须存在且位于本节点更早拓扑层；循环体内指向同迭代更早节点或全局更早节点）或 prev.X（仅循环体内合法，指向上一迭代副本，天然满足更早拓扑层）。引用不存在节点/同层或下游节点/循环体外使用 prev. 前缀，在加载校验期拒绝"
+        },
+        "op": {
+          "enum": ["contains", "equals", "not_contains"],
+          "description": "比较谓词（最小集，自 v1.1 冻结，v1.2/v1.3 不扩种类）：contains=结果包含 value；equals=结果完全等于 value；not_contains=结果不包含 value"
+        },
+        "value": {
+          "type": "string",
+          "description": "期望值：与被观察节点的结果字符串做比较（compute 节点结果词表见 compute 定义，run_when 的 value 按词表字面量书写，如布尔词表写 \"true\"/\"false\"）"
+        }
+      }
+    },
+    "loop": {
+      "type": "object",
+      "required": ["id", "max_iterations", "body"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "循环 id（展开命名前缀：{loop_id}_iter{k}_{node_id}）。不得与任何节点 id 或其他 loop.id 冲突（加载校验期拒绝）。"
+        },
+        "max_iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "description": "静态迭代上界（展开副本数；实际执行迭代数由 run_when 提前退出决定，不会超出本上界）。上界 32 为冻结限额：展开后总节点数预算 = max_iterations × 循环体节点数，防审计链体积爆炸。"
+        },
+        "body": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/node" },
+          "description": "循环体节点（1..=8 个；超过 8 个在加载校验期拒绝，引导拆分为子工作流委托）。体内节点即 node 形态（可含 compute / run_when / prev. 引用）。展开后第 k 迭代的副本 id = {loop_id}_iter{k}_{node_id}。"
+        }
+      }
+    },
+    "compute": {
+      "type": "object",
+      "description": "纯函数节点声明（节点含本字段时不得再含 agent_type/task/task_template）。执行形态约束（v1.2 D-03 拍板，v1.3 延续）：不经 delegate（不占 max_concurrent/max_depth）、在执行层循环内同步内联执行、无 IO 无副作用、不产生 IoRequest（单元测试断言链上 IoRequest 数量为 0）。函数目录封闭 27 种（v1.2 三种 + v1.3 新增 24 种）：strcmp / numeric_cmp / regex_match / add / sub / mul / div / abs / min / max / concat / length / upper / lower / trim / replace / split_at / substr / join / epoch_to_date / date_diff_days / epoch_add_days / and / or / not / if_else / clamp；目录外一律拒绝，新增函数 = 新 schema 版本 + 治理评审。错误语义总纲（全目录统一，fail-fast）：数值解析失败 / 除零 / 整数溢出 / 索引越界 / 日期域外 / 条件值不在词表 / 分隔符或查找串为空 = 节点失败 = 工作流终止，无静默回退无默认值兜底。整数域 = 有符号 64 位（i64），十进制字面（可选正负号），\"3.5\" 等非整数形态解析失败=节点失败（数值浮点比较场景用 numeric_cmp，其为 IEEE 754 双精度——整数函数与 numeric_cmp 数值域不同，属设计内分工非缺陷）。字符串按 Unicode 字符（char）计数与索引（非 UTF-8 字节）。日期域 = 0000-01-01..=9999-12-31（proleptic Gregorian），仅 UTC，禁本地时区，无「当前时间」类函数（时间/随机必须经上游节点参数显式传入并进审计链）。结果词表总表：strcmp→equal|different / contained|not_contained；numeric_cmp→true|false；regex_match→match|no_match；and/or/not→true|false；add/sub/mul/div/abs/min/max/clamp/length/date_diff_days/epoch_add_days→十进制整数字符串；epoch_to_date→YYYY-MM-DD；concat/join/upper/lower/trim/replace/split_at/substr/if_else→原样字符串。形态示例（防 LLM 误用）：常量参数（threshold/mode/pattern/separator/index/start/length/find/replacement/replacement/days/min_val/max_val）写在 compute 对象上与 function/inputs 平级，不写在 inputs 数组里——inputs 数组只能放节点引用（node_ref）；需要常量参与计算时（如加固定阈值 100），先建一个产生该常量的上游来源，或改用带常量参数的函数形态（如 numeric_cmp 单输入 + threshold）。收敛门控规范习语延续 v1.2（词表设计约束：different 不含 equal 子串、false 不含 true 子串且 true 不含 false 子串，保证 run_when { op:'not_contains', value:'equal' / 'true' } 可表达提前退出）。",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["function", "inputs", "mode"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "strcmp" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 2 个被比较节点：inputs[0] 与 inputs[1]"
+            },
+            "mode": {
+              "enum": ["equal", "contains"],
+              "description": "equal=比较两结果是否完全相等（收敛检测主用）；contains=inputs[0] 是否包含 inputs[1]"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs", "mode"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "numeric_cmp" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 2,
+              "items": { "$ref": "#/$defs/node_ref" }
+            },
+            "mode": {
+              "enum": ["lt", "le", "gt", "ge", "eq"],
+              "description": "数值比较模式（lt/le/gt/ge/eq）；IEEE 754 双精度解析，解析失败=节点失败"
+            },
+            "threshold": {
+              "type": "number",
+              "description": "阈值（inputs 仅 1 个时必填且禁止第 2 个输入；inputs 2 个时禁止本字段，比较 inputs[0] 与 inputs[1]）"
+            }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "inputs": { "maxItems": 1 } }, "required": ["inputs"] },
+              "then": { "required": ["threshold"] }
+            },
+            {
+              "if": { "properties": { "inputs": { "minItems": 2 } }, "required": ["inputs"] },
+              "then": { "not": { "required": ["threshold"] } }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs", "pattern"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "regex_match" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" }
+            },
+            "pattern": {
+              "type": "string",
+              "minLength": 1,
+              "description": "正则（Rust regex crate 语法；加载期校验，非法即拒载）"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "add" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 8,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "2..=8 个输入，全部解析为 i64（任一解析失败=节点失败）；结果=依次累加（inputs[0]+inputs[1]+…）；任一步 checked 溢出=节点失败"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "sub" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 8,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "2..=8 个输入，全部解析为 i64（任一解析失败=节点失败）；结果=依次累减（inputs[0]-inputs[1]-…）；任一步 checked 溢出=节点失败"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "mul" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 8,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "2..=8 个输入，全部解析为 i64（任一解析失败=节点失败）；结果=依次累乘（inputs[0]×inputs[1]×…）；任一步 checked 溢出=节点失败"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "div" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 2 个输入，解析为 i64（解析失败=节点失败）；结果=inputs[0]÷inputs[1] 截断除法（向零取整）；除数为 0=节点失败；i64::MIN ÷ (-1) 溢出=节点失败"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "abs" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 1 个输入，解析为 i64（解析失败=节点失败）；结果=绝对值；i64::MIN 取绝对值溢出=节点失败"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "min" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 8,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "2..=8 个输入，全部解析为 i64（任一解析失败=节点失败）；结果=最小值"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "max" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 8,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "2..=8 个输入，全部解析为 i64（任一解析失败=节点失败）；结果=最大值"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "concat" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 8,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "2..=8 个输入按序原样字符串拼接（无分隔符；被跳过上游的空字符串原样参与）；需要分隔符用 join"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "length" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 1 个输入；结果=该字符串的 Unicode 字符（char）数，输出十进制整数字符串（空串→\"0\"）"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "upper" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 1 个输入；结果=按 Unicode 全字符集大小写映射转大写（如 ß→SS，映射可能改变字符数）"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "lower" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 1 个输入；结果=按 Unicode 全字符集大小写映射转小写"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "trim" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 1 个输入；结果=去除首尾 Unicode 空白（中间空白不动）"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs", "find", "replacement"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "replace" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 1 个输入=原串"
+            },
+            "find": {
+              "type": "string",
+              "minLength": 1,
+              "description": "被替换子串（字面匹配非正则；空串在加载校验期拒绝）；原串中不含 find 时结果=原串原样（确定性行为非静默回退）"
+            },
+            "replacement": {
+              "type": "string",
+              "description": "替换为该串（可为空串=删除 find 全部出现）"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs", "separator", "index"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "split_at" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 1 个输入=原串"
+            },
+            "separator": {
+              "type": "string",
+              "minLength": 1,
+              "description": "分隔符（字面串非正则；空串在加载校验期拒绝）"
+            },
+            "index": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "第几段（0 基）：按 separator 分割后取第 index 段；index 越界（≥段数）=节点失败。例：原串 \"a,b,c\"、separator=\",\"、index=1 → \"b\""
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs", "start", "length"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "substr" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 1 个输入=原串"
+            },
+            "start": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "起始位置（char 索引，0 基）；start > 字符数=节点失败（start == 字符数 且 length == 0 合法→空串）"
+            },
+            "length": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "取多少个字符（char 数）；start+length > 字符数=节点失败（越界即失败，无静默截断）"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs", "separator"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "join" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 8,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "2..=8 个输入按序以 separator 连接（被跳过上游的空字符串原样参与，会产生连续分隔符——确定性原样语义）"
+            },
+            "separator": {
+              "type": "string",
+              "minLength": 1,
+              "description": "连接分隔符（空串在加载校验期拒绝；无分隔符拼接用 concat）"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "epoch_to_date" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 1 个输入=Unix epoch 秒（i64，解析失败=节点失败）；结果=对应 UTC 日期 YYYY-MM-DD（4 位零填充年份）；换算后日期超出 0000-01-01..=9999-12-31（即 epoch < -62135596800 或 > 253402300799）=节点失败。仅 UTC 固定换算，无本地时区。"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "date_diff_days" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 2 个输入=两个日期字符串，均须严格 \"YYYY-MM-DD\" 形态（4 位零填充年份，proleptic Gregorian），形态不符=节点失败；结果=inputs[1] − inputs[0] 的整天数（十进制整数，可负；例 inputs[0]=\"2026-01-01\"、inputs[1]=\"2026-01-04\" → \"3\"）。仅日粒度（无时分秒），仅显式入参。"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs", "days"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "epoch_add_days" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 1 个输入=Unix epoch 秒（i64，解析失败=节点失败）"
+            },
+            "days": {
+              "type": "integer",
+              "description": "偏移天数（可负）；结果=(epoch + days×86400) 的十进制整数字符串；checked 溢出=节点失败（本函数输出 epoch 秒非日期串，日期域校验交给下游 epoch_to_date）"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "and" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 8,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "2..=8 个输入，每个结果必须是封闭布尔词表 \"true\" 或 \"false\"（任一为其他值=节点失败——不隐式真值化）；全部 \"true\" → \"true\"，否则 → \"false\""
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "or" },
+            "inputs": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 8,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "2..=8 个输入，每个结果必须是封闭布尔词表 \"true\" 或 \"false\"（任一为其他值=节点失败——不隐式真值化）；任一 \"true\" → \"true\"，否则 → \"false\""
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "not" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 1 个输入，结果必须是 \"true\" 或 \"false\"（其他值=节点失败）；\"true\"→\"false\"，\"false\"→\"true\""
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "if_else" },
+            "inputs": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 3 个输入：inputs[0]=条件（其结果必须是 \"true\"/\"false\"，其他值=节点失败）；\"true\"→结果=inputs[1] 原样字符串；\"false\"→结果=inputs[2] 原样字符串（选择器语义：返回分支原值非布尔词表）"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["function", "inputs", "min_val", "max_val"],
+          "additionalProperties": false,
+          "properties": {
+            "function": { "const": "clamp" },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "$ref": "#/$defs/node_ref" },
+              "description": "恰好 1 个输入，解析为 i64（解析失败=节点失败）"
+            },
+            "min_val": {
+              "type": "integer",
+              "description": "下界（i64）；min_val > max_val 在加载校验期拒绝（拒载）"
+            },
+            "max_val": {
+              "type": "integer",
+              "description": "上界（i64）；min_val > max_val 在加载校验期拒绝（拒载）"
+            }
+          }
+        }
+      ]
+    },
+    "node_ref": {
+      "type": "string",
+      "pattern": "^(prev\\.)?[A-Za-z0-9_-]+$",
+      "description": "节点引用：原名 X=当前迭代（循环体外即全局）节点；prev.X=上一迭代副本（仅循环体内合法，加载校验期强检）。被引用节点须拓扑更早；常量不通过本引用传递（见 compute 定义形态示例）"
+    }
+  }
+}
