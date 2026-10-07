@@ -57,25 +57,27 @@ def shelved(doc: dict, schema_url: str, kid: str, pid: str) -> dict:
 
 def main() -> int:
     reg = load_registry()
-    # (路径, kind, 治理 id, schema) —— 裸文档自动合成壳; 已带 $schema+kind 的直接校验
+    # (路径, kind, 治理 id, schema 版本) —— 裸文档自动合成壳; 已带 $schema+kind 的直接校验
     cases = [
-        (EA / "agents/general.json", "agent_def", "com.evoagent.agent.general", "schemas/agent_def/v1.0.json"),
-        (EA / "agents/researcher.json", "agent_def", "com.evoagent.agent.researcher", "schemas/agent_def/v1.0.json"),
-        (EA / "agents/rule-copilot.json", "agent_def", "com.evoagent.agent.rule_copilot", "schemas/agent_def/v1.0.json"),
-        (EA / "rules/workflows/research_and_write.json", "workflow_dag", "com.evoagent.workflow.research_and_write", "schemas/workflow_dag/v1.0.json"),
+        (EA / "agents/general.json", "agent_def", "com.evoagent.agent.general", "v1.0"),
+        (EA / "agents/researcher.json", "agent_def", "com.evoagent.agent.researcher", "v1.0"),
+        (EA / "agents/rule-copilot.json", "agent_def", "com.evoagent.agent.rule_copilot", "v1.0"),
+        (EA / "rules/workflows/research_and_write.json", "workflow_dag", "com.evoagent.workflow.research_and_write", "v1.0"),
+        (EA / "rules/workflows/cond_compute_drill.json", "workflow_dag", "com.evoagent.workflow.cond_compute_drill", "v1.2"),
+        (EA / "rules/workflows/budget_review.json", "workflow_dag", "com.evoagent.workflow.budget_review", "v1.3"),
     ]
     if ERA is not None:
-        cases.append((ERA / "core_eval/agent_core_eval.json", "rule_set", "app.evorule.agent", "schemas/rule_set/v1.0.json"))
+        cases.append((ERA / "core_eval/agent_core_eval.json", "rule_set", "app.evorule.agent", "v1.0"))
     else:
         print("[SKIP] 检出根下未发现 rule_set 资产仓（可用第二个命令行参数显式指定）")
     failures = 0
-    for path, kid, pid, schema_rel in cases:
+    for path, kid, pid, version in cases:
         raw = json.loads(path.read_text(encoding="utf-8-sig"))
         if "$schema" in raw and "kind" in raw:
             doc = raw  # C7 固化壳资产: 完整 5 标注字段已在文档内
         else:
-            doc = shelved(raw, f"https://evorule.org/schemas/{kid}/v1.0.json", kid, pid)
-        schema = json.loads((REPO / schema_rel).read_text(encoding="utf-8-sig"))
+            doc = shelved(raw, f"https://evorule.org/schemas/{kid}/{version}.json", kid, pid)
+        schema = json.loads((REPO / "schemas" / kid / f"{version}.json").read_text(encoding="utf-8-sig"))
         errs = sorted(jsonschema.Draft202012Validator(schema, registry=reg).iter_errors(doc), key=lambda e: list(e.path))
         if errs:
             failures += 1
