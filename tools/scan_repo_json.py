@@ -69,6 +69,10 @@ EXEMPT_PATTERNS = [
     # ── 根仓 wasm 演示测试向量（bench/test 脚本夹具，不经引擎；构建产物
     #    rules_merged.json 已 gitignore 退出门禁面）──
     "evorule-wasm-demo/plan.json",
+    # ── TCB 纪律门禁规则集（evorule-governance 内核 L2 shape gate 直接消费
+    #    的裸数组，顶层非对象；非系统 JSON 加载通路，属地面= governance
+    #    加载门禁自身，生命周期随纪律条款演进自管）──
+    "evorule-tcb/discipline/",
 ]
 
 # 待迁移映射登记表（C6）：私造 $schema URI → 正式 kind 的迁移承诺。

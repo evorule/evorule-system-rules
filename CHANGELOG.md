@@ -4,6 +4,18 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/),
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [v1.5.0] - 2026-10-11
+
+### 新增
+- `_shared/v1.0` 新增 `llm_verdict` $def（LLM 判定事实载荷 v1.0，向后兼容新增——存量 `$ref` 不受影响，无需迁移）：LLM 在 agent 层完成语义判定后的事实化结构（kind/key/verdict/value/confidence/evidence/prompt_hash/model/origin 九字段，`additionalProperties:false`，`verdict:"value"` 条件必填 `value`）。设计原则：`confidence`/`origin` 不参与确定性求值面（不确定性不得写成规则条件阈值假象）；`prompt_hash` 保溯源不承诺可复现；本 def 为校验层定义，不改变引擎已消费的机器语义（schema-evolution-sop 红线合规）。消费面：evorule-rule 事实条目 `schema_ref`、evo-agent 判定产出侧；规则面经 payload 注入以现有 `exists`/`eq` 原子消费，引擎零 LLM 依赖
+- `docs/reference/schema-reference.md` 新增「共享定义（_shared/v1.0）」节（llm_verdict 字段表+消费面说明）
+
+### 修正
+- `tools/scan_repo_json.py` 豁免清单 + `docs/explanation/04-governance-scope.md` 豁免表补登记 `evorule-tcb/discipline/`（governance 内核 L2 shape gate 直接消费的裸数组纪律门禁，非系统 JSON 加载通路；入仓时漏同步豁免，verify-all 实测暴露）
+
+### 随动
+- `evorule-constitution` crate 0.3.3：`include_str!` 内嵌 `_shared/v1.0.json` 内容自动跟随（坏 JSON 编译期即失败，自带门禁），版本号随内容变更递增
+
 ## [v1.4.0] - 2026-10-07
 
 ### 新增

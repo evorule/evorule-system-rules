@@ -213,6 +213,28 @@ service_registry 允许"主体零改动"的标注方式：主体文件保持纯�
 
 **完整例子**: `examples/migration.example.json`
 
+## 共享定义（_shared/v1.0）
+
+跨 kind 共享的 `$defs` 单一事实源（SSOT）：`path` / `payload_attr_path` / `path_or_literal` / `domain` / `transform_rule` / `instruction` / `service_entry` / `llm_verdict`。各 kind schema 通过跨文件 `$ref` 引用（`https://evorule.org/schemas/_shared/v1.0.json#/$defs/<name>`），禁止复制粘贴导致漂移。
+
+### $defs: llm_verdict（LLM 判定事实载荷 v1.0）
+
+LLM 在 agent 层完成语义判定后的事实化结构；规则面经 payload 注入以现有原子（`exists`/`eq`）消费，引擎零 LLM 依赖。消费面：evorule-rule 事实条目 `schema_ref`、evo-agent 判定产出侧。
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `kind` | string | 是 | 恒为 `llm_verdict` |
+| `key` | string | 是 | `^[a-z0-9_][a-z0-9_.\-]*$`，判定键（如 `content.safety`） |
+| `verdict` | boolean \| string | 是 | boolean；或 `pass`/`fail`；`value` 形态时必须携带 `value` 字段 |
+| `value` | 任意 | 条件 | `verdict:"value"` 时必填；业务类型由消费侧治理面约束 |
+| `confidence` | number | 否 | 0-1；仅供人类复核，不得进规则条件 |
+| `evidence` | string | 否 | 判定依据摘录 |
+| `prompt_hash` | string | 是 | `^blake3:[0-9a-f]{64}$`（存储口径带前缀） |
+| `model` | string | 是 | 执行判定的模型标识 |
+| `origin` | string | 是 | 恒为 `llm` |
+
+生命周期治理（Draft→审批→Active）由 evorule-rule 治理面承载；`additionalProperties:false`。
+
 ## 验证当前 schema 是否生效
 
 ```bash
