@@ -1,0 +1,24 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "org.evorule.golden.path_or_literal",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "golden path_or_literal valid",
+    "description": "[CON-R-004] 金样例（valid）：value 字面量字符串（非 __ 前缀按字面量放行）",
+    "authors": [
+      "evorulelab@gmail.com"
+    ],
+    "license": "CC0-1.0"
+  },
+  "transform": [
+    {
+      "type": "set",
+      "params": {
+        "attr": "meta.greeting",
+        "operation": "set",
+        "value": "hello"
+      }
+    }
+  ]
+}

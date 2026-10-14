@@ -1,0 +1,7 @@
+{
+  "id": "data-1",
+  "payload": {
+    "score": 1
+  },
+  "schema_ref": "https://example.org/schemas/demo.json"
+}

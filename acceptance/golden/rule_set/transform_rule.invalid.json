@@ -1,0 +1,20 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "org.evorule.golden.transform_rule",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "golden transform_rule invalid",
+    "description": "[CON-R-004] 金样例（invalid）：noop 属指令层非元指令层（type enum 拒绝，P0-01）",
+    "authors": [
+      "evorulelab@gmail.com"
+    ],
+    "license": "CC0-1.0"
+  },
+  "transform": [
+    {
+      "type": "noop",
+      "params": {}
+    }
+  ]
+}

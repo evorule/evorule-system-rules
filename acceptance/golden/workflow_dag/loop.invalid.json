@@ -1,0 +1,11 @@
+{
+  "id": "lp1",
+  "max_iterations": 64,
+  "body": [
+    {
+      "id": "b1",
+      "agent_type": "worker",
+      "task": "t"
+    }
+  ]
+}

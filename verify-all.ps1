@@ -1,4 +1,4 @@
-﻿# verify-all.ps1 —— system-rules 一键预检（宪法自身健康闭环）
+# verify-all.ps1 —— system-rules 一键预检（宪法自身健康闭环）
 #
 # 任一步失败即以非零码退出。server 副本同步检查仅在 server 仓存在时执行。
 # 用法: powershell -File verify-all.ps1        （建议在本仓根目录执行）
@@ -49,6 +49,12 @@ if ($failed) {
 }
 Invoke-Step 'schema 闭环验收 (tools/verify_schemas.py)' {
     python (Join-Path $root 'tools\verify_schemas.py')
+}
+Invoke-Step '宪法文件头自检 (tools/check_schema_headers.py, CON-R-008/L0-001)' {
+    python (Join-Path $root 'tools\check_schema_headers.py')
+}
+Invoke-Step '金样例覆盖率+双向断言 (tools/check_golden_coverage.py, CON-R-004/K3-001)' {
+    python (Join-Path $root 'tools\check_golden_coverage.py')
 }
 Invoke-Step 'docs 链接检查 (tools/check_docs_links.py)' {
     python (Join-Path $root 'tools\check_docs_links.py')

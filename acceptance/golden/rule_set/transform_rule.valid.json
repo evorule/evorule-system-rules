@@ -1,0 +1,24 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "org.evorule.golden.transform_rule",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "golden transform_rule valid",
+    "description": "[CON-R-004] 金样例（valid）：条目级键白名单 {type,params}（5 元指令 set 最小形态）",
+    "authors": [
+      "evorulelab@gmail.com"
+    ],
+    "license": "CC0-1.0"
+  },
+  "transform": [
+    {
+      "type": "set",
+      "params": {
+        "attr": "meta.ready",
+        "operation": "set",
+        "value": true
+      }
+    }
+  ]
+}

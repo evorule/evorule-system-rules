@@ -1,0 +1,4 @@
+{
+  "name": "Weather",
+  "endpoint": "https://api.example.com/v1"
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "org.evorule.golden.payload_attr_path",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "golden payload_attr_path invalid",
+    "description": "[CON-R-004] 金样例（invalid）：写侧 attr 带 payload. 前缀（双重嵌套静默写歪，not pattern 拒绝）",
+    "authors": [
+      "evorulelab@gmail.com"
+    ],
+    "license": "CC0-1.0"
+  },
+  "transform": [
+    {
+      "type": "set",
+      "params": {
+        "attr": "payload.counter",
+        "operation": "add",
+        "value": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "org.evorule.golden.domain",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "golden domain valid",
+    "description": "[CON-R-004] 金样例（valid）：all/exists/not 组合域（嵌套一律 inner）",
+    "authors": [
+      "evorulelab@gmail.com"
+    ],
+    "license": "CC0-1.0"
+  },
+  "transform": [
+    {
+      "type": "branch",
+      "params": {
+        "domain": {
+          "type": "all",
+          "inner": [
+            {
+              "type": "exists",
+              "path": "player.score"
+            },
+            {
+              "type": "not",
+              "inner": {
+                "type": "eq",
+                "path": "player.score",
+                "value": 0
+              }
+            }
+          ]
+        },
+        "on_true": [
+          {
+            "type": "set",
+            "params": {
+              "attr": "meta.hit",
+              "operation": "set",
+              "value": 1
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

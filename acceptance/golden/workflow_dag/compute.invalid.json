@@ -1,0 +1,7 @@
+{
+  "function": "numeric_cmp",
+  "inputs": [
+    "n1"
+  ],
+  "mode": "gt"
+}

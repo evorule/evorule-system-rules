@@ -1,0 +1,38 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "org.evorule.golden.instruction",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "golden instruction valid",
+    "description": "[CON-R-004] 金样例（valid）：push.instructions 装指令层业务指令（sequence/set 结构门禁过）",
+    "authors": [
+      "evorulelab@gmail.com"
+    ],
+    "license": "CC0-1.0"
+  },
+  "transform": [
+    {
+      "type": "push",
+      "params": {
+        "instructions": [
+          {
+            "type": "sequence",
+            "params": {
+              "instructions": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "counter",
+                    "operation": "add",
+                    "value": 1
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

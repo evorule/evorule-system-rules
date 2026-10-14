@@ -1,0 +1,8 @@
+{
+  "kind": "llm_verdict",
+  "key": "content.safety",
+  "verdict": "value",
+  "prompt_hash": "blake3:0000000000000000000000000000000000000000000000000000000000000000",
+  "model": "MiniMax-M2.5",
+  "origin": "llm"
+}

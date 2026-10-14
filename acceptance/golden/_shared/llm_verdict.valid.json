@@ -1,0 +1,10 @@
+{
+  "kind": "llm_verdict",
+  "key": "content.safety",
+  "verdict": true,
+  "prompt_hash": "blake3:0000000000000000000000000000000000000000000000000000000000000000",
+  "model": "MiniMax-M2.5",
+  "origin": "llm",
+  "confidence": 0.9,
+  "evidence": "输入原文摘录"
+}

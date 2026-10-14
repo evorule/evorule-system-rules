@@ -1,0 +1,5 @@
+{
+  "name": "weather_lookup",
+  "endpoint": "https://api.example.com/v1",
+  "method": "POST"
+}

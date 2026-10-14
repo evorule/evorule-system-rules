@@ -1,0 +1,29 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "org.evorule.golden.instruction",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "golden instruction invalid",
+    "description": "[CON-R-004] 金样例（invalid）：sequence.instructions 空数组（minItems 1 拒绝）",
+    "authors": [
+      "evorulelab@gmail.com"
+    ],
+    "license": "CC0-1.0"
+  },
+  "transform": [
+    {
+      "type": "push",
+      "params": {
+        "instructions": [
+          {
+            "type": "sequence",
+            "params": {
+              "instructions": []
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

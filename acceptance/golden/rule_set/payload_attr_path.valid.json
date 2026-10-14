@@ -1,0 +1,24 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "org.evorule.golden.payload_attr_path",
+  "version": "1.0.0",
+  "metadata": {
+    "title": "golden payload_attr_path valid",
+    "description": "[CON-R-004] 金样例（valid）：写侧 attr 相对 payload 路径（无 payload. 前缀）",
+    "authors": [
+      "evorulelab@gmail.com"
+    ],
+    "license": "CC0-1.0"
+  },
+  "transform": [
+    {
+      "type": "set",
+      "params": {
+        "attr": "meta_guard.cleared_for_move",
+        "operation": "set",
+        "value": true
+      }
+    }
+  ]
+}
