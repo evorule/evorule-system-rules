@@ -1,0 +1,17 @@
+# Gitee Go pipeline for evorule-system-rules (宪法仓)
+#
+# 轻量面: python 族自检（schema 闭环/文件头/金样例覆盖率/版本号纪律/docs 链接）。
+# conformance 跨仓环测试与 server 副本同步在 Gitee 侧自动 [SKIP]
+# （不 clone evorule-server），强制阻断由 GitHub 侧 ci.yml 承担（mirror 后自动跑）。
+#
+# 注意: Gitee Go 环境若不可用本流水线，降级方案已批（仅 GitHub 侧强制面）。
+
+stages:
+  - validate
+
+validate-all:
+  stage: validate
+  image: mcr.microsoft.com/powershell:lts-nanoserver-1809
+  script:
+    - python3 --version || python --version
+    - pwsh -NoProfile -File verify-all.ps1

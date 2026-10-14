@@ -1,0 +1,50 @@
+# CI for evorule-system-rules (宪法仓)
+#
+# 单 job = verify-all.ps1 总入口（[CON-L4-003] conformance 挂 CI）:
+#   - python 环境预检 / verify_schemas / 文件头自检 / 金样例覆盖率(双向断言)
+#   - 版本号纪律(无声版本禁令) / docs 链接 / server 内嵌副本一致性
+#   - conformance 环测试（跨仓: checkout evorule-server 为兄弟目录, cargo 跑真装载路径）
+#
+# L4-004 双指标分工:
+#   - 金样例覆盖率 = verify-all 内 check_golden_coverage 步（本仓原生 100% 红灯）
+#   - 报错向导覆盖率（四段式模板测试）= evorule-server CI 的 K6 指标步
+#     （scripts/check_k6_metrics.ps1，向导实现在 server 侧 rule_tools）
+#
+# GitHub 侧为强制阻断面（PR + push）；Gitee Go 受限降轻量面（.gitee-ci/validate.yml）。
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  verify-all:
+    name: verify-all (conformance + coverage + sync)
+    runs-on: ubuntu-latest
+    steps:
+      # 本仓置于子目录, 使 evorule-server 成为兄弟目录（verify-all 跨仓定位约定）
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          path: evorule-system-rules
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: evorule/evorule-server
+          path: evorule-server
+
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+
+      - name: python + jsonschema
+        run: |
+          python3 --version
+          python3 -m pip install --quiet jsonschema
+
+      - name: verify-all.ps1（含跨仓 conformance）
+        working-directory: evorule-system-rules
+        shell: pwsh
+        run: pwsh -NoProfile -File ./verify-all.ps1
