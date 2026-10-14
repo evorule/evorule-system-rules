@@ -1,4 +1,4 @@
-# verify-all.ps1 —— system-rules 一键预检（宪法自身健康闭环）
+﻿# verify-all.ps1 —— system-rules 一键预检（宪法自身健康闭环）
 #
 # 任一步失败即以非零码退出。server 副本同步检查仅在 server 仓存在时执行。
 # 用法: powershell -File verify-all.ps1        （建议在本仓根目录执行）
@@ -75,6 +75,22 @@ if (Test-Path $serverSync) {
     }
 } else {
     Write-Host "`n[SKIP] server 仓不存在($serverSync)，跳过副本同步检查"
+}
+$serverRoot = Join-Path $siblingRoot 'evorule-server'
+$loaderManifest = Join-Path $serverRoot 'core\rule_loader\Cargo.toml'
+if (Test-Path $loaderManifest) {
+    Invoke-Step 'conformance 环测试 (cargo test -p evorule-rule-loader, CON-R-005)' {
+        # 真装载路径环测试：金样例装载档合法集全过/非法集全拒（跨仓闭环件，server 仓在时执行）
+        Push-Location $serverRoot
+        try {
+            cargo test -p evorule-rule-loader --test conformance
+            if ($LASTEXITCODE -ne 0) { throw "cargo test 退出码 $LASTEXITCODE" }
+        } finally {
+            Pop-Location
+        }
+    }
+} else {
+    Write-Host "`n[SKIP] server 仓不存在($loaderManifest)，跳过 conformance 环测试 (CON-R-005)"
 }
 $rootRepo = Join-Path $siblingRoot 'evorule'
 if (Test-Path $rootRepo) {
