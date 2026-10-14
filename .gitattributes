@@ -1,0 +1,14 @@
+# [CON-R-007] 行尾规范化：schemas 与 acceptance 强制 LF。
+# 理由：已实证 CRLF 假阳性（O-462）——check_schema_sync 裸字节
+# 比对会把纯行尾差异误报为内容漂移；源仓侧强制 LF 为第一道保险，
+# server 侧脚本行尾归一化比较为第二道（防御性双保险）。
+schemas/** text eol=lf
+acceptance/** text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.rs text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.ps1 text eol=lf
