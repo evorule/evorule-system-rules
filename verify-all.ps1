@@ -56,6 +56,10 @@ Invoke-Step '宪法文件头自检 (tools/check_schema_headers.py, CON-R-008/L0-
 Invoke-Step '金样例覆盖率+双向断言 (tools/check_golden_coverage.py, CON-R-004/K3-001)' {
     python (Join-Path $root 'tools\check_golden_coverage.py')
 }
+Invoke-Step '版本号纪律 (tools/check_version_discipline.py, CON-G-003)' {
+    # 禁无声版本：存量版本文件仅许 description 级变更，结构面变化必须落新版本文件
+    python (Join-Path $root 'tools\check_version_discipline.py')
+}
 Invoke-Step 'docs 链接检查 (tools/check_docs_links.py)' {
     python (Join-Path $root 'tools\check_docs_links.py')
 }

@@ -124,6 +124,29 @@
 - 跳过关键 migration 可能丢字段
 - 工具强制逐级(项目方显式串)
 
+## tag 规范（[CON-G-004]）
+
+**每次宪法 schema 包版本发布必须打 `vX.Y.Z` tag**——tag 是版本回滚与消费方对账的锚点：
+
+- 命名：`v<major>.<minor>.<patch>`，与 CHANGELOG 条目一一对应；发版 checklist 的"git tag 与 version 一致"即指此。
+- 时机：该版本的 schema 变更全部合入 main 且 CI 全绿后，在 main 上打 tag（附 `-m` 注明对应 CHANGELOG 段）。
+- 消费方同步：server 等内嵌副本消费方按 tag 对账——`scripts/check_schema_sync.py`（同函数链）以任一 tag 的 worktree 检出为 `--source` 即可验证历史版本一致性。
+
+**回滚路径**（已演练验证）：
+
+```bash
+# 1. 任一历史版本均可经 tag 检出为独立 worktree
+git worktree add ../sr-rollback vX.Y.Z
+
+# 2. 以历史版本为源对 server 内嵌副本做一致性检查（check-only）
+python evorule-server/scripts/check_schema_sync.py --source ../sr-rollback
+
+# 3. 需要回滚时用 --sync 把历史版本覆盖到 server 副本；回滚完成后以 main 为源 --sync 还原
+git worktree remove ../sr-rollback
+```
+
+旧版本 tag 永不删除（[CON-G-004] 纪律），保证上列路径对任意历史版本可用。
+
 ## 紧急 hotfix
 
 如果是 critical bug(例:某个字段定义错导致所有 system JSON 加载失败):
