@@ -2,6 +2,11 @@
 
 [介绍](introduction.md)
 
+# 快速入口
+
+- [受约束者一页导览](guide.md)
+- [编辑器 $schema 关联](editors.md)
+
 # 项目方指南
 
 - [教程](tutorial/README.md)
