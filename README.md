@@ -1,5 +1,6 @@
 # evorule-system-rules
 
+
 > **仓库角色**：本仓库是 **GitHub 镜像**。权威源（primary repo）在 **Gitee**：[https://gitee.com/evorule/evorule-system-rules](https://gitee.com/evorule/evorule-system-rules)。
 > Issue / PR 请提交到 Gitee，GitHub 侧仅供镜像与推广展示。
 
@@ -93,7 +94,7 @@ cd evorule-system-rules
 powershell -File verify-all.ps1
 ```
 
-依次执行 6 步：schema 闭环验收 / docs 链接检查 / 拦截实证矩阵 / server 内嵌副本一致性 / 根仓数据格式门禁 / evo-agent 资产 schema 校验（后三步在对应仓缺失时容错跳过），任一失败即非零退出。
+依次执行 12 步：python 环境预检（缺依赖即终止）/ schema 闭环验收 / 宪法文件头自检 / 金样例覆盖率+双向断言 / 版本号纪律 / docs 链接检查 / 拦截实证矩阵 / server 内嵌副本一致性 / conformance 环测试 / 根仓数据格式门禁 / evo-agent 资产 schema 校验 / rule 仓 data/ 资产守护（RG-1 件A3；后六步在对应仓缺失时容错跳过），任一失败即非零退出。
 
 ### 校验一个 system JSON
 

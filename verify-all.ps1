@@ -1,4 +1,4 @@
-﻿# verify-all.ps1 —— system-rules 一键预检（宪法自身健康闭环）
+﻿﻿﻿# verify-all.ps1 —— system-rules 一键预检（宪法自身健康闭环）
 #
 # 任一步失败即以非零码退出。server 副本同步检查仅在 server 仓存在时执行。
 # 用法: powershell -File verify-all.ps1        （建议在本仓根目录执行）
@@ -111,6 +111,17 @@ if (Test-Path $evoAgent) {
     }
 } else {
     Write-Host "`n[SKIP] evo-agent 仓不存在($evoAgent)，跳过资产校验"
+}
+$ruleRepo = Join-Path $siblingRoot 'evorule-rule'
+$ruleGuard = Join-Path $ruleRepo 'tools\check_data_assets.py'
+if (Test-Path $ruleGuard) {
+    # RG-1 件A3：宪法十二步之后补 rule 仓步——data/ 90 件资产守护（少件红灯/多件警告/live 只读试连），
+    # 跨仓守护闭环，rule 仓从「宪法纸面管辖」推进到「机器守护落地」（见 evorule-rule docs/asset-inventory.md）
+    Invoke-Step 'rule 仓 data/ 资产守护 (check_data_assets.py, RG-1 件A3)' {
+        python $ruleGuard
+    }
+} else {
+    Write-Host "`n[SKIP] rule 仓不存在($ruleRepo)，跳过 data/ 资产守护 (RG-1)"
 }
 
 Write-Host ""
