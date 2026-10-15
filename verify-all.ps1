@@ -1,4 +1,4 @@
-﻿﻿﻿# verify-all.ps1 —— system-rules 一键预检（宪法自身健康闭环）
+﻿﻿﻿﻿# verify-all.ps1 —— system-rules 一键预检（宪法自身健康闭环）
 #
 # 任一步失败即以非零码退出。server 副本同步检查仅在 server 仓存在时执行。
 # 用法: powershell -File verify-all.ps1        （建议在本仓根目录执行）
@@ -122,6 +122,17 @@ if (Test-Path $ruleGuard) {
     }
 } else {
     Write-Host "`n[SKIP] rule 仓不存在($ruleRepo)，跳过 data/ 资产守护 (RG-1)"
+}
+$domainMeta = Join-Path $root 'tools\check_domain_meta.py'
+if (Test-Path $ruleRepo) {
+    # SR-17 件3（B3）：verify-all 第十四步——扩展层领域 schema 元纪律（[CON-D-001]/[CON-D-003]）：
+    # rule 仓 data/domain_schemas 7 件过元 schema（必备件+domain 命名域）+301 映射表承接；
+    # 双权威消失的机器判据之一（另一=check_schema_sync 扩展层段，SR-17 件4/B4）
+    Invoke-Step '扩展层领域 schema 元纪律 (check_domain_meta.py, SR-17 件3)' {
+        python $domainMeta
+    }
+} else {
+    Write-Host "`n[SKIP] rule 仓不存在($ruleRepo)，跳过扩展层元纪律 (SR-17 件3)"
 }
 
 Write-Host ""

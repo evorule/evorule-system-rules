@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/domain/domain_schema.meta.v1.json",
+  "title": "扩展层领域 schema 元纪律",
+  "description": "扩展层（evorule-rule 仓 data/domain_schemas/）领域 schema 的元 schema：约束每件必须携带 $id（domain 命名域）/version/owner/reviewed_by/consumer 五必备件——/schemas/ 宪法本域权威路径不得被扩展层实体占用（双权威消失的条文面，[CON-D-002]/[CON-D-003]，SR-17 件1）。命名域形态 https://evorule.org/schemas/domain/<线段>/<名>/v<版本>.json，线段按线扩段（ale=evo-agent 判卷线，e2e/northstar 等他线各占其段）。",
+  "type": "object",
+  "required": ["$id", "version", "owner", "reviewed_by", "consumer"],
+  "properties": {
+    "$id": {
+      "type": "string",
+      "pattern": "^https://evorule\\.org/schemas/domain/[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*)+/v[0-9]+(\\.[0-9]+)?(\\.[0-9]+)?\\.json$",
+      "description": "领域 schema 标识：必须挂 domain 命名域（<线段>/<名>/v<版本>.json），禁止占用宪法本域权威路径（/schemas/ 下非 domain 段）"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v?[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+      "description": "领域 schema 语义版本（与 $id 尾段 v<版本> 同源）"
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "description": "资产责任人（唯一授权公开身份）"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "minLength": 1,
+      "description": "复核人（复核留痕）"
+    },
+    "consumer": {
+      "type": "string",
+      "minLength": 1,
+      "description": "实际消费方（按件如实填写：依赖该 schema 的链路/组件）"
+    },
+    "$schema": {
+      "type": "string",
+      "description": "dialect 声明（缺省按校验方 dialect）"
+    },
+    "title": {
+      "type": "string",
+      "description": "人类可读标题"
+    },
+    "description": {
+      "type": "string",
+      "description": "语义描述"
+    }
+  },
+  "additionalProperties": true,
+  "examples": [
+    {
+      "$id": "https://evorule.org/schemas/domain/ale/eval-bridge/v1.json",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ALE bridge 存证（示例）",
+      "version": "1.0",
+      "owner": "Mr. Damu Zheng",
+      "reviewed_by": "Mr. Damu Zheng",
+      "consumer": "TB 实战线 ALE-J 链",
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  ]
+}
