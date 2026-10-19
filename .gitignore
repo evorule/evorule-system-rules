@@ -62,3 +62,6 @@ acceptance/**/workspace.db.bak-*
 
 # Rust build artifacts (crates/evorule-constitution)
 crates/**/target/
+
+# 运营登记册（本地私有面，不上库）
+plan/
