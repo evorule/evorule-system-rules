@@ -102,7 +102,8 @@ def main():
     print("\n== 2. 真实文件闭环验收（正向 = 期望通过；负向 = 期望被拒）==")
 
     # --- rule_set 正向 ---
-    ok, core_eval = load_real(os.path.join(EVORULE_REPO, "evorule-tcb", "core_eval.json"), "core_eval.json")
+    # required=False：根仓（evorule）非本仓 CI 必检出项，缺席时跳过该用例（与 verify-all.ps1 跨仓步 SKIP 语义同构）
+    ok, core_eval = load_real(os.path.join(EVORULE_REPO, "evorule-tcb", "core_eval.json"), "core_eval.json", required=False)
     all_ok &= ok
     if ok:
         annotated = dict(core_eval)

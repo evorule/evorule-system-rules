@@ -43,8 +43,10 @@ jobs:
         run: |
           python3 --version
           # 与 verify-all.ps1 的 `python` 探针同一解释器，避免 python/python3 环境分裂；
-          # referencing 为 schema 工具链显式依赖（jsonschema 新版传递依赖，显式声明防旧版环境缺件）
-          python -m pip install --quiet jsonschema referencing
+          # referencing 为 schema 工具链显式依赖（jsonschema 新版传递依赖，显式声明防旧版环境缺件）；
+          # --upgrade 必须：runner 预装旧版 jsonschema 时 pip 缺省 already satisfied 跳过升级，
+          # 导致 registry= 构造参数 TypeError（4.18+ 才支持）
+          python -m pip install --quiet --upgrade jsonschema referencing
 
       - name: verify-all.ps1（含跨仓 conformance）
         working-directory: evorule-system-rules
