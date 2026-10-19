@@ -37,6 +37,18 @@ jobs:
           repository: evorule/evorule-server
           path: evorule-server
 
+      # 白名单对齐闸（verify_schemas.py == 4.，安全语义硬对账不可 SKIP）的权威源仓：
+      # 根仓（evorule-tcb dispatch / evorule-governance 白名单 / evorule-cli SSOT 引用）与 bundle 结构门禁
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: evorule/evorule
+          path: evorule
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: evorule/evorule-bundle
+          path: evorule-bundle
+
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
 
       - name: python + jsonschema
@@ -51,4 +63,7 @@ jobs:
       - name: verify-all.ps1（含跨仓 conformance）
         working-directory: evorule-system-rules
         shell: pwsh
+        env:
+          # 根仓检出仅为白名单对齐闸提供权威源；根仓数据资产守护不随检出激活（根仓资产红走根仓自身批次）
+          SR_SKIP_ROOT_SCAN: "1"
         run: pwsh -NoProfile -File ./verify-all.ps1

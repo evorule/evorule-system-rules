@@ -97,7 +97,9 @@ if (Test-Path $loaderManifest) {
     Write-Host "`n[SKIP] server 仓不存在($loaderManifest)，跳过 conformance 环测试 (CON-R-005)"
 }
 $rootRepo = Join-Path $siblingRoot 'evorule'
-if (Test-Path $rootRepo) {
+# SR_SKIP_ROOT_SCAN=1：检出根仓仅为白名单对齐闸提供权威源（verify_schemas.py 内部消费）时，
+# 越界的根仓数据资产守护不随检出激活——根仓资产红走根仓自身批次，不牵连本仓 CI
+if (-not $env:SR_SKIP_ROOT_SCAN -and (Test-Path $rootRepo)) {
     Invoke-Step '根仓数据格式门禁 (scan_repo_json.py → evorule)' {
         python (Join-Path $root 'tools\scan_repo_json.py') --repo $rootRepo
     }
