@@ -1,4 +1,4 @@
-﻿﻿﻿﻿# verify-all.ps1 —— system-rules 一键预检（宪法自身健康闭环）
+﻿# verify-all.ps1 —— system-rules 一键预检（宪法自身健康闭环）
 #
 # 任一步失败即以非零码退出。server 副本同步检查仅在 server 仓存在时执行。
 # 用法: powershell -File verify-all.ps1        （建议在本仓根目录执行）
@@ -30,13 +30,13 @@ function Invoke-Step {
     }
 }
 
-Invoke-Step 'python 环境预检 (jsonschema 可导入性)' {
-    # 防「存在但不可运行」的隐蔽失效：PATH 解析到的 python 若缺 jsonschema 模块，
+Invoke-Step 'python 环境预检 (jsonschema/referencing 可导入性)' {
+    # 防「存在但不可运行」的隐蔽失效：PATH 解析到的 python 若缺 jsonschema/referencing 模块，
     # 后续步骤会以裸 ModuleNotFoundError 中断且不指明解释器来源——预检显式暴露两者。
-    $probe = & python -c "import sys, jsonschema; print(sys.executable)" 2>&1
+    $probe = & python -c "import sys, jsonschema, referencing; print(sys.executable)" 2>&1
     if ($LASTEXITCODE -ne 0) {
         $pyver = (& python --version 2>&1) -join ''
-        throw "当前 python（$pyver）缺少 jsonschema 模块——执行 'python -m pip install jsonschema' 后重跑；若为托管环境解释器，请先确认 PATH 指向预期 python"
+        throw "当前 python（$pyver）缺少 jsonschema/referencing 模块——执行 'python -m pip install jsonschema referencing' 后重跑；若为托管环境解释器，请先确认 PATH 指向预期 python"
     }
     Write-Host "[OK] python 解释器: $probe"
 }

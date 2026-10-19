@@ -42,7 +42,9 @@ jobs:
       - name: python + jsonschema
         run: |
           python3 --version
-          python3 -m pip install --quiet jsonschema
+          # 与 verify-all.ps1 的 `python` 探针同一解释器，避免 python/python3 环境分裂；
+          # referencing 为 schema 工具链显式依赖（jsonschema 新版传递依赖，显式声明防旧版环境缺件）
+          python -m pip install --quiet jsonschema referencing
 
       - name: verify-all.ps1（含跨仓 conformance）
         working-directory: evorule-system-rules
