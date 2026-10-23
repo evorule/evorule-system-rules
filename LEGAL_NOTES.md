@@ -50,17 +50,35 @@ evorule-system-rules 是**生态治理层**(Tier 1),所有 evorule 生态的 sys
 
 ### 2.1 Scope A(本仓及主仓的 evorule 框架 IP)
 
-- 包含:本仓的 `tools/` / `docs/` / ADR;主仓的 `evorule-tcb` / `evorule-reactor` / `evorule-governance` / `evorule-cli` 等 Rust 代码;以及 `evorule-tcb/core_eval.json`(后者为 **CC0 1.0 公共领域**,因其"解释器规范"角色独立处理)
-- 协议:**AGPL-3.0-or-later + 商业双模式**(例外:本仓 `schemas/` 自 2026-08-29 起以 **CC0 1.0 公共领域** 奉献,见 [schemas/LICENSE-SCHEMAS.md](./schemas/LICENSE-SCHEMAS.md))
+Scope A 内部按**规范层 / 实现层**再分一层,两者协议不同:
+
+| 资产 | 协议 |
+|---|---|
+| 本仓 `schemas/`(全部 JSON Schema) | **CC0 1.0 公共领域**(2026-08-29 决策,全文见 [schemas/LICENSE-SCHEMAS.md](./schemas/LICENSE-SCHEMAS.md)) |
+| 本仓 `tools/` / `docs/` / ADR / 示例 | **AGPL-3.0-or-later + 商业双模式** |
+| 主仓 `evorule-tcb` / `evorule-reactor` / `evorule-governance` / `evorule-cli` 等代码 | **AGPL-3.0-or-later + 商业双模式** |
+| 主仓 `evorule-tcb/core_eval.json` | **CC0 1.0 公共领域**(因其"解释器规范"角色独立处理,见 §4) |
+
 - 决定权:EvoRule 团队
 - 商业许可咨询:<evorulelab@gmail.com>
 
 ### 2.2 Scope B(项目方的 system JSON 内容 IP)
 
 - 包含:项目方用本仓 schema 创作的所有 system JSON(规则集、agent 定义、知识库、工作流、迁移规则、服务注册)
-- 协议:**项目方自选** —— 通过 `metadata.license` 字段声明,enum 为 `Apache-2.0` / `MIT` / `BSD-3-Clause` / `Proprietary` / `Custom`
+- 协议:**项目方自选** —— 通过 `metadata.license` 字段声明。合法枚举以 `_meta` v1.0 为准,共 9 值:
+  `AGPL-3.0-or-later` / `AGPL-3.0` / `Apache-2.0` / `MIT` / `BSD-3-Clause` / `CC0-1.0` / `CC0-1.0 Universal (Public Domain)` / `Proprietary` / `Custom`
 - 决定权:**项目方本人**
 - evorule 不对 Scope B 内容做任何 IP 主张:不要求署名、不要求回馈、不参与分润、不强制披露
+- **上游义务不因 Scope 分离而免除**:Scope B 内容中引入的第三方材料,其许可义务由引入方承担,见 [§5](#5-第三方来源材料义务)
+
+**`knowledge` 双形态与内容 IP 归属**:`knowledge` 条目分两种形态,两者的内容 IP **都归数据作者**:
+
+| 形态 | 字段 | 内容 IP 归属 |
+|---|---|---|
+| 文档知识条目 | `content`(人类可读正文) | 数据作者 |
+| 数据资产条目 | `payload`(领域结构化数据)+ `schema_ref`(领域 JSON Schema 引用) | 数据作者 |
+
+`schema_ref` 指向的领域 JSON Schema 归**领域仓**所有,本仓只定义引用契约(代管不代持);入库校验方按 `schema_ref` 取 schema 强校验 `payload`,resolver 未命中即拒绝(fail-fast)。
 
 ### 2.3 Scope 分离的法律基础
 
@@ -93,21 +111,69 @@ evorule-system-rules 是**生态治理层**(Tier 1),所有 evorule 生态的 sys
 
 当前所有 evorule 系统 JSON **必须**走 evorule-system-rules 的 schema 治理,这是 Tier 1 治理模型的硬约束。
 
-## 5. Schema 自声明(机器可读层)
+## 5. 第三方来源材料义务
 
-为让任何读 schema 的工具(包括第三方 validator、SDK、IDE 插件)都能获取本仓的 Scope 分离立场,本仓**每个 schema 文件**在 JSON Schema 顶层声明 `x_legal_authority_notice` 字段。这是一个 vendor extension,JSON Schema 规范允许,不影响 schema 验证逻辑,工具可读取该字段获知:
+Scope 分离划的是 **evorule 与项目方之间**的界,**不**处理**项目方与第三方之间**的许可义务。项目方(或规则集 / 知识库 / 技能包的贡献者)把自己不拥有的材料放进 system JSON 时,义务随材料一起转移过来——**evorule 不主张 IP ≠ 免除上游许可义务**。
+
+本节是 **evorule 的工程与协作规则**,不是法律意见;具体项目请咨询执业律师。本仓不承诺任何材料已被清权,只规定**如何引入、如何标注、如何上架**。
+
+### 5.1 来源四类分级
+
+引入任何外部材料前,先判定它属于哪一类;不同类别走不同的许可路径:
+
+| 类别 | 判定特征 | 可用范围 | 必须做的事 |
+|---|---|---|---|
+| **A 公共领域 / 政府与标准机构公开文本** | CC0 或公有领域声明;政府出版物、公开指南 | 可直接使用 | `metadata.provenance.source` 记 `imported`;条目内留来源标识、版本与获取日期 |
+| **B 明确开源许可** | 标注了 MIT / Apache-2.0 / BSD / LGPL / GPL 等 | 可用,但**逐个按其许可履行义务** | 宽松许可:保留版权与许可声明;copyleft:先评估传染边界再入库 |
+| **C 付费标准** | IPC / UL / IEC / ISO / ASTM 等以订阅或购买方式获取的文本 | **只取事实与数值,不复制文本与表格编排** | 记标准编号、版本、条款出处;用自己的话重述判据 |
+| **D 专有或来源不明** | 厂商专有资料;授权链路无法确认 | **不可用** | 不得入库 |
+
+### 5.2 事实与表达要分开处理
+
+判据类材料大量是**事实**(数值、物理常数、公式、阈值)。事实与承载它的**表达**(原文段落、表格编排、图示)不是一回事,工程上的处理原则是:
+
+- **事实层**:可以重述为自己的判据表达,并记录出处与独立复核结论
+- **表达层**:不逐字搬运原文段落与表格编排
+- **拿不准时**:先取得授权再使用
+
+### 5.3 上架门:三条硬性要求
+
+任何进入本仓治理链的外部来源材料,必须满足:
+
+1. **来源可追溯** —— `metadata.provenance.source` 取 `manual` / `generated` / `derived` / `imported` 之一,并在条目内保留来源标识、版本与获取日期
+2. **许可可标注** —— `metadata.license` 取 §2.2 的 9 个合法枚举值之一;无法归入任一枚举时用 `Custom` 并写明实际条款
+3. **事实经复核** —— 引入的数值 / 阈值须有独立复核记录(谁复核、怎么复核、复核结论)。evorule 引擎只做**形式**校验(量纲、单位、冲突、循环、收敛),**不能**替你确认数值正确、条款未被曲解或版本未过期
+
+### 5.4 copyleft 的边界
+
+宽松许可(MIT / Apache-2.0 / BSD)不产生额外义务;copyleft(LGPL / GPL 等)的义务可能**穿透聚合**——把 copyleft 材料放进整体分发的产物里,署名与源码提供义务可能存活到整体。
+
+因此:
+
+- 判据集与技能包**按来源逐项隔离**:不同来源分条目存放,各自标 `metadata.license`,不混进同一份聚合产物
+- 面向第三方分发的产物发布前,**逐来源过一遍许可**,不要假定"只是数据"就不受 copyleft 影响
+- 授权链路不明的来源按 **D 类**处理(不可用),不按"善意推定"放行
+
+## 6. Schema 自声明(机器可读层)
+
+为让任何读 schema 的工具(包括第三方 validator、SDK、IDE 插件)都能获取本仓的 Scope 分离立场,本仓 schema 家族在 JSON Schema 顶层声明 `x_legal_authority_notice` 字段。这是一个 vendor extension,JSON Schema 规范允许,不影响 schema 验证逻辑,工具可读取该字段获知:
 
 - 本 schema 由 EvoRule 团队维护,以 **CC0 1.0 公共领域**奉献(schemas/LICENSE-SCHEMAS.md)
 - 读本 schema 验证的 system JSON 内容 IP 归作者所有,schema 本身无任何许可证主张
 
-## 6. 修订历史
+**覆盖范围(截至 v1.2)**:`schemas/<kind>/` 下各 kind 的 schema 文件均带该声明;`schemas/_shared/`(跨文件 `$defs` 单一事实源,非独立 kind schema)与 `schemas/domain/domain_schema.meta.v1.json`(扩展域 schema 元 schema)当前不带。
+
+**正本位置**:本文件与 `docs/adr/scope-split-ip-model.md` 的正本在 **evorule-system-rules 仓根**。schema 中的 `../../LEGAL_NOTES.md` 与 `../../docs/adr/scope-split-ip-model.md` 是相对 `schemas/<kind>/` 的路径,在本仓完全解析得通;镜像副本仓(evorule-server 的 `core/rule_schema/`)不包含这两份文件,该相对路径在镜像侧不成立——**以本仓为正本**。
+
+## 7. 修订历史
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
 | 1.0 | 2026-08-26 | 初版,与 LICENSE 修复同步发布;确立 Scope A vs Scope B 分离模型 |
 | 1.1 | 2026-08-29 | `schemas/` 以 CC0 1.0 公共领域奉献(格式规范分层,与 core_eval 先例衔接);`x_legal_authority_notice` 机器可读声明同步更新 |
+| 1.2 | 2026-10-23 | `metadata.license` 枚举对齐 `_meta` v1.0 实际值(9 值,原文档仅列 5 值);补 `knowledge` 双形态的内容 IP 归属;新增 §5 第三方来源材料义务(来源四类分级 / 事实与表达分离 / 上架门 / copyleft 边界);修正 §6 "每个 schema 文件" 的过宽表述,并标明正本位置与镜像侧路径说明 |
 
 ---
 
-**最后更新**: 2026-08-29
-**文档版本**: 1.1
+**最后更新**: 2026-10-23
+**文档版本**: 1.2

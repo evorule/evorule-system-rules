@@ -4,6 +4,20 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/),
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [v1.5.1] - 2026-10-23
+
+### 修正
+- `LEGAL_NOTES.md` 修订至 v1.2:`metadata.license` 枚举对齐 `_meta` v1.0 实际值(9 值,原文档仅列 5 值);§6 修正"每个 schema 文件"的过宽表述,并标明正本位置与镜像侧路径说明
+- `docs/adr/scope-split-ip-model.md` 修订:Scope A 表补规范层/实现层分层(`schemas/` 与 `core_eval.json` 为 CC0 1.0,系 2026-08-29 决策);关键规则 4 枚举改 9 值;"不接受的替代方案"中"schemas 留 AGPL"一条按 2026-08-29 改判重写
+- `docs/reference/schema-reference.md` 页首标注该页以 `v0.9` 为基线(kind 正文尚未同步到固化版 `v1.0`,`rule_set` body 已由 `rules[]` + when/then 改为引擎原生 `transform[]`),并把 `metadata.license` 当前枚举指向 `schemas/_meta/v1.0.json`
+
+### 新增
+- `LEGAL_NOTES.md` §5 第三方来源材料义务:来源四类分级(公共领域/政府文本、明确开源许可、付费标准、专有或来源不明)、事实与表达分离、上架门三条硬性要求、copyleft 边界——Scope 分离不免除上游许可义务
+- `docs/adr/scope-split-ip-model.md` 关键规则 5(`knowledge` 双形态内容 IP 归数据作者,`schema_ref` 指向的领域 schema 归领域仓)与关键规则 6(上游义务不在 Scope 分离中免除)
+
+### 索引
+- `docs/adr/README.md` 当前规范表补入 IP 双 Scope 分离模型;`docs/SUMMARY.md` 同步补入
+
 ## [v1.5.0] - 2026-10-11
 
 ### 新增

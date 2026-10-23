@@ -38,6 +38,7 @@
   - [双版本协议](adr/double-version-protocol.md)
   - [evorule-rule 必须对齐](adr/evorule-rule-must-align.md)
   - [自举终止条件](adr/bootstrap-termination.md)
+  - [IP 双 Scope 分离模型](adr/scope-split-ip-model.md)
 - [运维与发布](operations/README.md)
   - [发版流程](operations/release-process.md)
   - [CI 与校验流水线](operations/ci-pipeline.md)

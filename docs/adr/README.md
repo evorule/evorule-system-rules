@@ -70,6 +70,7 @@
 | [双版本协议](./double-version-protocol.md) | `$schema` 与 `version` 的关系 |
 | [evorule-rule 必须对齐](./evorule-rule-must-align.md) | evorule-rule 与 Tier 1 的对齐约束 |
 | [自举终止条件](./bootstrap-termination.md) | L0/L1/L2 不可自举的边界 |
+| [IP 双 Scope 分离模型](./scope-split-ip-model.md) | 框架 IP 与项目方内容 IP 的分离模型 |
 
 ## 内部决策过程
 

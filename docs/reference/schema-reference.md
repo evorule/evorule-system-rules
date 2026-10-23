@@ -4,6 +4,8 @@
 # 6 个 kind 的 schema 字段
 
 > 所有 system JSON 的权威字段定义。完整 JSON Schema 在 `schemas/<kind>/v0.9.json`。
+>
+> ⚠️ **本参考页以 `v0.9` 为基线,kind 正文尚未同步到固化版 `v1.0`**(`rule_set` 的 body 已由 `rules[]` + when/then 改为引擎原生 `transform[]`)。**`metadata.license` 的当前合法枚举以 [`schemas/_meta/v1.0.json`](../../schemas/_meta/v1.0.json) 为准**(9 值:`AGPL-3.0-or-later` / `AGPL-3.0` / `Apache-2.0` / `MIT` / `BSD-3-Clause` / `CC0-1.0` / `CC0-1.0 Universal (Public Domain)` / `Proprietary` / `Custom`);v0.9 为 5 值。
 
 ## 通用 5 顶层字段
 
