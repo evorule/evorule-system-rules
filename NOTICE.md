@@ -40,11 +40,13 @@
 |---|---|---|
 | **代码** | AGPL-3.0-or-later | 详见 [LICENSE](LICENSE) |
 | **`core_eval.json`** | **CC0 1.0 公共领域** | EvoRule 宪法（解释器规范）—— 任何人都可以自由实现兼容的 EvoRule 引擎，无需保留版权声明。官方文本：<https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt> ；仓内副本：[LICENSES/core_eval-CC0-1.0.txt](LICENSES/core_eval-CC0-1.0.txt) |
+| **`schemas/`** | **CC0 1.0 公共领域** | EvoRule 系统 JSON 的格式规范层（各 kind 的 JSON Schema）—— 第三方可零法律负担地实现校验器 / IDE 插件 / 代码生成器。官方文本同上；仓内声明：[schemas/LICENSE-SCHEMAS.md](schemas/LICENSE-SCHEMAS.md) |
 
 **协议分离的战略意义**：
 
 - 代码（copyleft, AGPL-3.0）：保护 EvoRule 当前实现，阻止大厂"白嫖 fork 后卖闭源 SaaS"
 - 宪法（public domain, CC0-1.0）：鼓励广泛采用，任何人都可以基于宪法实现兼容引擎
+- 规范层（public domain, CC0-1.0）：格式规范与解释器规范同属公共领域，第三方实现工具链无许可阻力
 - 这把"标准"和"实现"分开，类似 HTTP 规范（W3C 公共）vs Apache HTTP Server（版权）
 
 ## 设计原则
