@@ -30,6 +30,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 MIGRATE = REPO_ROOT / "tools" / "evorule-migrate"
 
 SKIP_DIRS = {"target", ".git", "node_modules", ".cargo", "dist"}
+# 自定义 CARGO_TARGET_DIR 的构建产物目录（如 wasm 实机线的 target-sc1b）——
+# 前缀匹配统一剪枝：cargo 产物指纹 json 永远不是系统 JSON，且此类目录常被
+# 忘出 .gitignore（target/ 在列而改名目录没有），按名剪枝比逐仓补登记可靠。
+SKIP_DIR_PREFIXES = ("target",)
 
 # 豁免清单：路径片段匹配（与 docs/explanation/04-governance-scope.md 登记保持一致）。
 # 每条必须能回答判据三问：谁加载 / 是否参与生产执行链路 / 生命周期谁自管。
@@ -141,7 +145,10 @@ def main() -> int:
     mapped = 0
 
     for root, dirs, files in os.walk(repo):
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        dirs[:] = [
+            d for d in dirs
+            if d not in SKIP_DIRS and not d.startswith(SKIP_DIR_PREFIXES)
+        ]
         for f in files:
             if not f.endswith(".json"):
                 continue

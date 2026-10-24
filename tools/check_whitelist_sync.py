@@ -50,10 +50,20 @@ EVORULE_SERVER_REPO = Path(os.environ.get("EVORULE_SERVER_REPO") or _CHECKOUT_RO
 EVORULE_BUNDLE_REPO = Path(os.environ.get("EVORULE_BUNDLE_REPO") or _CHECKOUT_ROOT / "evorule-bundle")
 
 TCB_EXECUTOR = EVORULE_REPO / "evorule-tcb" / "src" / "executor.rs"
+TCB_DOMAIN = EVORULE_REPO / "evorule-tcb" / "src" / "domain.rs"
+SERVER_WORKSPACE_TRANSLATE = (
+    EVORULE_SERVER_REPO / "core" / "workspace" / "src" / "rule_translate.rs"
+)
 GOVERNANCE_RULE_VALIDATION = EVORULE_REPO / "evorule-governance" / "src" / "rule_validation.rs"
 CLI_VALIDATE = EVORULE_REPO / "evorule-cli" / "src" / "commands" / "validate.rs"
 BUNDLE_STRUCTURE = EVORULE_BUNDLE_REPO / "src" / "structure.rs"
 SHARED_SCHEMA = SCHEMAS_DIR / "_shared" / "v1.0.json"
+
+# 已知漂移豁免（2026-10-24）：schema domain 枚举含 "in"
+# （vendored 增补的设计产物），主仓 TCB evaluate_domain 暂未吸收——该单边差
+# 在架构裁定落地前豁免（WARN 不 FAIL）；裁定落地（主仓吸收或 schema 收回）
+# 后差集自然归零，豁免自动失效。除此之外任何差集一律 FAIL。
+KNOWN_TCB_DOMAIN_MISSING = {"in"}
 
 # 解析器：提取 Rust 字符串字面量数组项 "word"
 STR_LITERAL_RE = re.compile(r'"([a-z_]+)"\s*=>\s*exec_')
@@ -99,6 +109,45 @@ def extract_schema_enum() -> list[str]:
     return sorted(set(enum))
 
 
+def extract_schema_domain_types() -> list[str]:
+    """从 _shared/v1.0.json 的 $defs.domain（oneOf 变体）提取域类型全集。"""
+    doc = json.loads(SHARED_SCHEMA.read_text(encoding="utf-8"))
+    variants = doc["$defs"]["domain"]["oneOf"]
+    types: set[str] = set()
+    for variant in variants:
+        t = variant.get("properties", {}).get("type", {})
+        const = t.get("const")
+        if const:
+            types.add(const)
+        for e in t.get("enum") or []:
+            types.add(e)
+    if not types:
+        raise RuntimeError("schema domain oneOf 未解析到任何域类型")
+    return sorted(types)
+
+
+def extract_tcb_domain_types() -> list[str]:
+    """从 TCB domain.rs 的 evaluate_domain match 分支提取域类型。
+
+    主仓 TCB 缺 "in"（vendored 增补未回传，架构层已登记该已知漂移）——调用方按
+    KNOWN_TCB_DOMAIN_MISSING 豁免，本函数返回如实解析结果。
+    """
+    src = TCB_DOMAIN.read_text(encoding="utf-8")
+    m = re.search(r"match domain_type \{(.*?)\n\s*\}", src, re.DOTALL)
+    if not m:
+        raise RuntimeError(f"未找到 match domain_type 分支块: {TCB_DOMAIN}")
+    # 域分支臂为 "type" => evaluate_*（非 exec_* 前缀），用通用臂正则
+    names = re.findall(r'"([a-z_]+)"\s*=>', m.group(1))
+    if not names:
+        raise RuntimeError(f"match domain_type 分支块内未解析到任何域类型: {TCB_DOMAIN}")
+    return sorted(set(names))
+
+
+def extract_server_g4_domain_types() -> list[str]:
+    """从 server workspace rule_translate.rs 的 VALID_DOMAIN_TYPES 提取域类型。"""
+    return extract_rust_str_array(SERVER_WORKSPACE_TRANSLATE, "VALID_DOMAIN_TYPES")
+
+
 def check_cli_ssot() -> tuple[bool, str]:
     """CLI 侧检查：必须引用 tcb SSOT 常量，且无本地硬编码白名单副本（C2）。"""
     src = CLI_VALIDATE.read_text(encoding="utf-8")
@@ -121,6 +170,9 @@ def main() -> int:
             "schema": extract_schema_enum(),
             "governance": extract_rust_str_array(GOVERNANCE_RULE_VALIDATION, "VALID_TRANSFORM_TYPES"),
             "bundle": extract_rust_str_array(BUNDLE_STRUCTURE, "META_INSTRUCTION_TYPES"),
+            "tcb_domain": extract_tcb_domain_types(),
+            "schema_domain": extract_schema_domain_types(),
+            "server_g4_domain": extract_server_g4_domain_types(),
         }
     except FileNotFoundError as e:
         print(f"  [FAIL] 权威源文件缺失——请用 EVORULE_REPO / EVORULE_SERVER_REPO / "
@@ -131,7 +183,9 @@ def main() -> int:
         return 1
 
     for key, names in checks.items():
-        print(f"  [{labels[key]}] {', '.join(names)}")
+        if key in ("tcb_domain", "schema_domain", "server_g4_domain"):
+            continue
+        print(f"  [{labels.get(key, key)}] {', '.join(names)}")
 
     # 期望口径：dispatch 全量含 enforce；schema == dispatch；
     # governance == dispatch − enforce（enforce 仅 tier=meta 文件可用，回归验证）
@@ -152,6 +206,33 @@ def main() -> int:
         all_ok = False
         diff = sorted(set(checks["bundle"]) ^ set(baseline))
         print(f"  [FAIL] bundle 结构门禁 ≠ TCB dispatch({baseline}): 差集={diff}")
+
+    # —— domain 域类型三方对账（schema / server G4 / 主仓 TCB）——
+    # bundle 不持域类型枚举（structure.rs 自陈"domain 求值类型"在结构级之外），n/a。
+    # 已知漂移豁免：schema 含 "in" 而主仓 TCB 暂无（架构层登记的已知漂移），WARN 不 FAIL；
+    # 其余任何差集一律 FAIL。
+    schema_dom = set(checks["schema_domain"])
+    g4_dom = set(checks["server_g4_domain"])
+    tcb_dom = set(checks["tcb_domain"])
+    print(f"  [domain schema] {', '.join(checks['schema_domain'])}")
+    print(f"  [domain server-G4] {', '.join(checks['server_g4_domain'])}")
+    print(f"  [domain 主仓 TCB] {', '.join(checks['tcb_domain'])}")
+    if g4_dom != schema_dom:
+        all_ok = False
+        diff = sorted(g4_dom ^ schema_dom)
+        print(f"  [FAIL] server G4 ≠ schema domain 枚举: 差集={diff}")
+    tc_missing = schema_dom - tcb_dom
+    tc_extra = tcb_dom - schema_dom
+    if tc_extra:
+        all_ok = False
+        print(f"  [FAIL] 主仓 TCB 出现 schema 之外的域类型: {sorted(tc_extra)}")
+    unknown_missing = tc_missing - KNOWN_TCB_DOMAIN_MISSING
+    if unknown_missing:
+        all_ok = False
+        print(f"  [FAIL] 主仓 TCB 缺失未豁免的域类型: {sorted(unknown_missing)}")
+    if tc_missing:
+        print(f"  [WARN] 主仓 TCB 暂缺 {sorted(tc_missing)}（已知漂移豁免中："
+              f"vendored 增补未回传，裁定落地后本豁免自动失效）")
 
     cli_ok, cli_msg = check_cli_ssot()
     print(f"  [CLI validate.rs] {cli_msg}")
