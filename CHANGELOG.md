@@ -4,6 +4,11 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/),
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### 修正
+- `tools/scan_repo_json.py` 豁免清单 + `docs/explanation/04-governance-scope.md` 豁免表补登记根仓 3 件工具夹具（`evorule-eval/fixtures/plan.json`、`rules_merged.json`、`scripts/g5_golden_vectors.json`）：verify-all 门禁步干净检出实测 3 违规；判性均为工具自用夹具（eval harness 读取 / 跨语言黄金向量验证器输入），非系统 JSON 加载通路，其中两件顶层非对象（与 TCB discipline 裸数组先例同款）；复跑归零（豁免 12→15，违规 3→0）
+
 ## [v1.5.1] - 2026-10-23
 
 ### 修正

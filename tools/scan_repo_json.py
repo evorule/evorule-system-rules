@@ -73,6 +73,12 @@ EXEMPT_PATTERNS = [
     #    的裸数组，顶层非对象；非系统 JSON 加载通路，属地面= governance
     #    加载门禁自身，生命周期随纪律条款演进自管）──
     "evorule-tcb/discipline/",
+    # ── eval 工具夹具（种子指令与合并规则集，仅被 evorule-eval harness 读取；
+    #    wasm-demo 同源复制件，原件已有豁免行/已退役；生命周期随上游仓自管）──
+    "evorule-eval/fixtures/",
+    # ── 跨语言黄金向量验证器输入（顶层向量条目数组，仅被
+    #    scripts/cross_lang_verifier.py 读取比对，内核实算导出后固化）──
+    "scripts/g5_golden_vectors.json",
 ]
 
 # 待迁移映射登记表（C6）：私造 $schema URI → 正式 kind 的迁移承诺。

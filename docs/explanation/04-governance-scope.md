@@ -45,6 +45,8 @@
 | `agents/*.json`、`rules/workflows/*.json` | evo-agent | 属地执法形态（2026-09-15 存量清零判定）：运行时经 constitution.rs 用 agent_def/workflow_dag v1.0 schema 校验裸 body（见下文属地执法义务表 evo-agent 行）；带壳反而与裸 body 运行时契约冲突。若未来校验降级失效，立即重新入辖 |
 | `evorule-wasm-demo/plan.json` | 根仓 | wasm 演示测试向量（bench/test 脚本夹具）：仅被演示 harness 读取；构建产物 `rules_merged.json` 已 gitignore 退出门禁面 |
 | `evorule-tcb/discipline/*.json` | 根仓 | TCB 纪律门禁规则集（governance 内核 L2 shape gate 直接消费的裸数组，顶层非对象）：非系统 JSON 加载通路，属地面=governance 加载门禁自身；生命周期随纪律条款演进自管（2026-10-11 补登记：入仓时漏同步豁免，verify-all 实测暴露） |
+| `evorule-eval/fixtures/plan.json`、`rules_merged.json` | 根仓 | eval 工具种子指令与合并规则集夹具（2026-10-24 补登记，verify-all 门禁步实测暴露）：仅被 evorule-eval harness（`src/lib.rs`、`r1_replay.rs`、`r4_interception.rs`）读取，非系统 JSON 加载通路；且为 wasm-demo 仓同源复制件（该仓原件 `plan.json` 已有豁免行、`rules_merged.json` 构建 gitignore 退役），生命周期随上游仓演进自管 |
+| `scripts/g5_golden_vectors.json` | 根仓 | 跨语言黄金向量验证器输入（2026-10-24 补登记，verify-all 门禁步实测暴露）：顶层为向量条目数组（与 TCB discipline 裸数组同款形态），仅被 `scripts/cross_lang_verifier.py` 读取比对，由内核实算导出后固化，非系统 JSON 加载通路；生命周期随黄金向量批次演进自管 |
 
 新项目引入"长得像系统 JSON 但其实不是"的文件时，应在本表登记而非默认入辖。
 
