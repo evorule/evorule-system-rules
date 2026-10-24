@@ -131,7 +131,14 @@ if (Test-Path $ruleGuard) {
     # RG-1 件A3：宪法十二步之后补 rule 仓步——data/ 90 件资产守护（少件红灯/多件警告/live 只读试连），
     # 跨仓守护闭环，rule 仓从「宪法纸面管辖」推进到「机器守护落地」（见 evorule-rule docs/asset-inventory.md）
     Invoke-Step 'rule 仓 data/ 资产守护 (check_data_assets.py, RG-1 件A3)' {
-        python $ruleGuard
+        # repo 模式：CI/跨仓语境只守护已入库件——运行时/敏感本地件在 fresh
+        # checkout 天然缺席属类别外（标杆机全清单语义由该机本地直跑 ops 模式承担）
+        $env:RG1_MODE = 'repo'
+        try {
+            python $ruleGuard
+        } finally {
+            Remove-Item Env:RG1_MODE -ErrorAction SilentlyContinue
+        }
     }
 } else {
     Write-Host "`n[SKIP] rule 仓不存在($ruleRepo)，跳过 data/ 资产守护 (RG-1)"
