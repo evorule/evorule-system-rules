@@ -49,6 +49,63 @@ fn main() {
         );
     }
 
+    // 覆盖率断言（CON-D-03 收口）：schemas/ 实体全集必须被显式归类——
+    // 内嵌（SCHEMAS）或显式不内嵌（NOT_EMBEDDED，附理由）。新增 schema 文件
+    // 未归类即编译失败，杜绝「加了文件忘了内嵌/忘了归类」的静默漂移。
+    const NOT_EMBEDDED: &[&str] = &[
+        // v0.9 历史版本：仅迁移/对照引用，不进入组件内嵌
+        "_meta/v0.9.json",
+        "agent_def/v0.9.json",
+        "knowledge/v0.9.json",
+        "migration/v0.9.json",
+        "rule_set/v0.9.json",
+        "service_registry/v0.9.json",
+        "workflow_dag/v0.9.json",
+        // 元 schema：领域命名域（domain/*）纪律件，消费方=tools/check_domain_meta.py，
+        // 非组件运行时契约
+        "domain/domain_schema.meta.v1.json",
+    ];
+
+    let schemas_dir = std::path::Path::new(&manifest)
+        .join("..")
+        .join("..")
+        .join("schemas");
+    let mut uncovered: Vec<String> = Vec::new();
+    let mut stack = vec![schemas_dir.clone()];
+    while let Some(dir) = stack.pop() {
+        let entries = std::fs::read_dir(&dir)
+            .unwrap_or_else(|e| panic!("读取 schemas 目录失败 {}: {e}", dir.display()));
+        for entry in entries {
+            let path = entry
+                .unwrap_or_else(|e| panic!("schemas 目录项读取失败: {e}"))
+                .path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path.extension().and_then(|v| v.to_str()) != Some("json") {
+                continue;
+            }
+            let rel = path
+                .strip_prefix(&schemas_dir)
+                .unwrap_or_else(|e| panic!("schemas 相对路径推导失败: {e}"))
+                .display()
+                .to_string()
+                .replace('\\', "/");
+            if !SCHEMAS.contains(&rel.as_str()) && !NOT_EMBEDDED.contains(&rel.as_str()) {
+                uncovered.push(rel);
+            }
+        }
+    }
+    if !uncovered.is_empty() {
+        uncovered.sort();
+        panic!(
+            "schemas/ 存在未归类文件（既不在内嵌清单 SCHEMAS，也不在显式不内嵌 \
+             清单 NOT_EMBEDDED）：{uncovered:?}——新增 schema 须同步本文件归类，\
+             内嵌者另同步 src/lib.rs 的 EMBEDDED 表"
+        );
+    }
+
     // schemas/ 母本变更 → 触发本 crate 重编(内嵌数据随动,同仓 SSOT 机制保证)
     println!("cargo:rerun-if-changed=../../schemas");
 }

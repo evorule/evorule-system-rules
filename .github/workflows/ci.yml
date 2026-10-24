@@ -50,6 +50,15 @@ jobs:
           repository: evorule/evorule-bundle
           path: evorule-bundle
 
+      # evorule-rule 检出（CON-D-01 收口）：激活 verify-all 的 rule 仓两道门——
+      # data/ 资产守护（RG-1 件A3）+ 扩展层领域 schema 元纪律（SR-17 件3，
+      # check_domain_meta.py）。缺此检出则两门走 [SKIP]，双权威消失判据之一
+      # 不在执法链上（G-12）
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: evorule/evorule-rule
+          path: evorule-rule
+
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
 
       - name: python + jsonschema

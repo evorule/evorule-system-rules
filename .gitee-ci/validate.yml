@@ -1,17 +1,25 @@
 # Gitee Go pipeline for evorule-system-rules (宪法仓)
 #
-# 轻量面: python 族自检（schema 闭环/文件头/金样例覆盖率/版本号纪律/docs 链接）。
-# conformance 跨仓环测试与 server 副本同步在 Gitee 侧自动 [SKIP]
-# （不 clone evorule-server），强制阻断由 GitHub 侧 ci.yml 承担（mirror 后自动跑）。
+# 轻量面: python 族自检五门直跑（schema 闭环/文件头/金样例覆盖率/版本号纪律/docs 链接）。
+# conformance 跨仓环测试、server 副本同步、rule 仓两门与宪法 crate 测试在 Gitee 侧
+# 不执行（不 clone 跨仓/不在 python 镜像内跑 cargo），强制阻断由 GitHub 侧
+# ci.yml 承担（mirror 后自动跑）。
 #
-# 注意: Gitee Go 环境若不可用本流水线，降级方案已批（仅 GitHub 侧强制面）。
+# 2026-10-24（CON-D-02 收口）：原镜像 powershell:lts-nanoserver-1809 无 python
+# ⇒ verify-all 预检必红、流水线实质失效；改为 python 官方镜像**直跑五道 python 门**
+# （不再经 verify-all.ps1/pwsh 编排），镜像自带解释器零安装步骤。
 
 stages:
   - validate
 
 validate-all:
   stage: validate
-  image: mcr.microsoft.com/powershell:lts-nanoserver-1809
+  image: python:3.12-bookworm
   script:
-    - python3 --version || python --version
-    - pwsh -NoProfile -File verify-all.ps1
+    - python --version
+    - pip install --quiet --upgrade jsonschema referencing
+    - python tools/verify_schemas.py
+    - python tools/check_schema_headers.py
+    - python tools/check_golden_coverage.py
+    - python tools/check_version_discipline.py
+    - python tools/check_docs_links.py

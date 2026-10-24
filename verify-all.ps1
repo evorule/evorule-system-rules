@@ -56,6 +56,17 @@ Invoke-Step '宪法文件头自检 (tools/check_schema_headers.py, CON-R-008/L0-
 Invoke-Step '金样例覆盖率+双向断言 (tools/check_golden_coverage.py, CON-R-004/K3-001)' {
     python (Join-Path $root 'tools\check_golden_coverage.py')
 }
+Invoke-Step '宪法 crate 单元测试 (cargo test -p evorule-constitution, CON-D-04 收口)' {
+    # 20 项内嵌宪法契约测试此前只在本地、不在 CI 强制面（CON-D-04）——
+    # 本步为 always-on：crate 在本仓 crates/ 下，无跨仓依赖
+    Push-Location (Join-Path $root 'crates\evorule-constitution')
+    try {
+        cargo test -p evorule-constitution
+        if ($LASTEXITCODE -ne 0) { throw "cargo test 退出码 $LASTEXITCODE" }
+    } finally {
+        Pop-Location
+    }
+}
 Invoke-Step '版本号纪律 (tools/check_version_discipline.py, CON-G-003)' {
     # 禁无声版本：存量版本文件仅许 description 级变更，结构面变化必须落新版本文件
     python (Join-Path $root 'tools\check_version_discipline.py')
