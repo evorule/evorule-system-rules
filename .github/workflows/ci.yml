@@ -31,6 +31,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           path: evorule-system-rules
+          fetch-depth: 0 # 版本号纪律门（CON-G-003）需 diff vs origin/main，浅检出无基准分支必红
 
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
