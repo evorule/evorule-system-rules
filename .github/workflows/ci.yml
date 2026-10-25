@@ -77,3 +77,11 @@ jobs:
           # 根仓检出仅为白名单对齐闸提供权威源；根仓数据资产守护不随检出激活（根仓资产红走根仓自身批次）
           SR_SKIP_ROOT_SCAN: "1"
         run: pwsh -NoProfile -File ./verify-all.ps1
+
+  # Ecosystem license gate (reusable workflow, pinned to root-repo commit)
+  license-gate:
+    name: license gate
+    permissions:
+      contents: read
+    uses: evorule/evorule/.github/workflows/license-gate.yml@9d0e4fdbb28cfd0db1051c9014149f198b290e6b
+

@@ -11,6 +11,7 @@
 
 stages:
   - validate
+  - license
 
 validate-all:
   stage: validate
@@ -23,3 +24,12 @@ validate-all:
     - python tools/check_golden_coverage.py
     - python tools/check_version_discipline.py
     - python tools/check_docs_links.py
+
+# === Ecosystem license gate (parity with GitHub license-gate.yml @ pinned root commit) ===
+license:
+  stage: license
+  image: rust:1.98.1-slim
+  script:
+    - test -f deny.toml || { echo 'FAIL: deny.toml missing'; exit 1; }
+    # seven-pack presence (sync-licenses scope; cargo-deny not applicable to non-Cargo repos)
+    - for f in LICENSE NOTICE.md DUAL_LICENSE.md COMMERCIAL_LICENSE.md FREE_COMMERCIAL_LICENSE.md CLA-individual.md CLA-corporate.md; do test -f "$f" || { echo "FAIL: missing $f"; exit 1; }; done
