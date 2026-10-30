@@ -59,11 +59,11 @@ CLI_VALIDATE = EVORULE_REPO / "evorule-cli" / "src" / "commands" / "validate.rs"
 BUNDLE_STRUCTURE = EVORULE_BUNDLE_REPO / "src" / "structure.rs"
 SHARED_SCHEMA = SCHEMAS_DIR / "_shared" / "v1.0.json"
 
-# 已知漂移豁免（2026-10-24）：schema domain 枚举含 "in"
-# （vendored 增补的设计产物），主仓 TCB evaluate_domain 暂未吸收——该单边差
-# 在架构裁定落地前豁免（WARN 不 FAIL）；裁定落地（主仓吸收或 schema 收回）
-# 后差集自然归零，豁免自动失效。除此之外任何差集一律 FAIL。
-KNOWN_TCB_DOMAIN_MISSING = {"in"}
+# 域类型三方对账铁律：schema / server G4 / 主仓 TCB 必须完全一致，任何差集
+# 一律 FAIL。（历史备注：2026-10-24 曾对 "in" 设单边豁免——主仓暂缺该域的
+# 已知漂移，WARN 不 FAIL；2026-10-31 主线吸收落地，三方归零，豁免按其
+# 自设失效条款摘除，此后无任何豁免面。）
+KNOWN_TCB_DOMAIN_MISSING = set()
 
 # 解析器：提取 Rust 字符串字面量数组项 "word"
 STR_LITERAL_RE = re.compile(r'"([a-z_]+)"\s*=>\s*exec_')
@@ -129,8 +129,7 @@ def extract_schema_domain_types() -> list[str]:
 def extract_tcb_domain_types() -> list[str]:
     """从 TCB domain.rs 的 evaluate_domain match 分支提取域类型。
 
-    主仓 TCB 缺 "in"（vendored 增补未回传，架构层已登记该已知漂移）——调用方按
-    KNOWN_TCB_DOMAIN_MISSING 豁免，本函数返回如实解析结果。
+    本函数返回如实解析结果；三方一致性由调用方严格判定（无豁免面）。
     """
     src = TCB_DOMAIN.read_text(encoding="utf-8")
     m = re.search(r"match domain_type \{(.*?)\n\s*\}", src, re.DOTALL)
@@ -209,8 +208,7 @@ def main() -> int:
 
     # —— domain 域类型三方对账（schema / server G4 / 主仓 TCB）——
     # bundle 不持域类型枚举（structure.rs 自陈"domain 求值类型"在结构级之外），n/a。
-    # 已知漂移豁免：schema 含 "in" 而主仓 TCB 暂无（架构层登记的已知漂移），WARN 不 FAIL；
-    # 其余任何差集一律 FAIL。
+    # 任何差集一律 FAIL（无豁免面；历史上的 "in" 单边豁免已随主线吸收摘除）。
     schema_dom = set(checks["schema_domain"])
     g4_dom = set(checks["server_g4_domain"])
     tcb_dom = set(checks["tcb_domain"])
@@ -226,13 +224,9 @@ def main() -> int:
     if tc_extra:
         all_ok = False
         print(f"  [FAIL] 主仓 TCB 出现 schema 之外的域类型: {sorted(tc_extra)}")
-    unknown_missing = tc_missing - KNOWN_TCB_DOMAIN_MISSING
-    if unknown_missing:
-        all_ok = False
-        print(f"  [FAIL] 主仓 TCB 缺失未豁免的域类型: {sorted(unknown_missing)}")
     if tc_missing:
-        print(f"  [WARN] 主仓 TCB 暂缺 {sorted(tc_missing)}（已知漂移豁免中："
-              f"vendored 增补未回传，裁定落地后本豁免自动失效）")
+        all_ok = False
+        print(f"  [FAIL] 主仓 TCB 缺失的域类型: {sorted(tc_missing)}")
 
     cli_ok, cli_msg = check_cli_ssot()
     print(f"  [CLI validate.rs] {cli_msg}")
