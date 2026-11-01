@@ -4,7 +4,7 @@ version = "0.3.3"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 description = "evorule 宪法 jsonschema 校验组件——属地执法共享实现(见 docs/explanation/04-governance-scope.md 属地执法义务)"
-repository = "https://gitee.com/evorule/evorule-system-rules"
+repository = "https://github.com/evorule/evorule-system-rules"
 build = "build.rs"
 
 [dependencies]
