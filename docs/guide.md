@@ -177,7 +177,7 @@ python tools/evorule-migrate validate your_file.json
 ② 在哪：<JSON 路径>（第 N 行附近）
 ③ 正本：<schema 权威链接>
 ④ 正确形态（最小可过）：<最小样例>
-→ 导览：docs/guide.md（规则作者节）| https://gitee.com/evorule/evorule-system-rules#docs
+→ 导览：docs/guide.md（规则作者节）| https://github.com/evorule/evorule-system-rules#docs
 ```
 
 - ①② 告诉你错在哪;③ 是权威定义;④ 是能直接抄的最小修复。

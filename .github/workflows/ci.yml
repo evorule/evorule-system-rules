@@ -10,7 +10,7 @@
 #   - 报错向导覆盖率（四段式模板测试）= evorule-server CI 的 K6 指标步
 #     （scripts/check_k6_metrics.ps1，向导实现在 server 侧 rule_tools）
 #
-# GitHub 侧为强制阻断面（PR + push）；Gitee Go 受限降轻量面（.gitee-ci/validate.yml）。
+# GitHub 侧为强制阻断面（PR + push）。
 name: CI
 
 on:

@@ -59,7 +59,7 @@
 - 命令：`python _verify_schemas.py`（末尾自动并入 §4 白名单对齐闸）
 - **依赖外部仓**：`EVORULE_REPO` / `EVORULE_SERVER_REPO`（必选，缺失 → FAIL）；`YUANZE_DEMOS`（可选，缺失 → SKIP 对应用例）
 
-## Gitee Go 配置(`.gitee-ci/ci.yml`,如使用 Gitee)
+## CI 流水线配置（`.github/workflows/ci.yml`）
 
 ```yaml
 name: evorule-system-rules CI
