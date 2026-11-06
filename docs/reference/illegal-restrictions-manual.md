@@ -63,7 +63,7 @@
 | F-02 | 域类型（7 基础） | `evorule-tcb/src/domain.rs`（eq/lt/exists/instruction/all/not/has_fields） |
 | F-03 | I/O 结果路径 | reactor 注入 **`__io_results__`**（复数） |
 | F-04 | 路径语法 | `evorule-tcb/src/path.rs` |
-| F-05 | 终止性约束（64/64/64/1024） | `transition.rs` / `executor.rs` / `domain.rs` 常量 |
+| F-05 | 终止性约束（128/64/64/2048） | `transition.rs` / `executor.rs` / `domain.rs` 常量 |
 | F-06 | Fact 类型枚举 | `evorule-reactor/src/fact.rs` |
 | F-08 | 审计链哈希算法 | `evorule-reactor/src/hash.rs`（BLAKE3） |
 | F-09 | 服务注册结构 | `io_handlers/src/service_registry.rs`（对象映射） |

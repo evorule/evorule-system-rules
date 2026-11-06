@@ -20,6 +20,7 @@ fn main() {
         "workflow_dag/v1.3.json",
         "service_registry/v1.0.json",
         "rule_set/v1.0.json",
+        "rule_set/v1.1.json",
         "knowledge/v1.0.json",
         "migration/v1.0.json",
         "_meta/v1.0.json",
