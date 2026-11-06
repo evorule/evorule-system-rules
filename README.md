@@ -42,6 +42,7 @@ schemas/
   _shared/v1.0.json           shared $defs (transform_rule etc., SSOT)
   _meta/v1.0.json             the five fixed top-level fields (a v0.9 historical version also exists)
   rule_set/v1.0.json
+  rule_set/v1.1.json          (transform cap widened 64 -> 128; coexists with v1.0)
   agent_def/v1.0.json         (draft, pending field verification)
   workflow_dag/v1.0.json
   workflow_dag/v1.1.json      (run_when conditional branches; coexists with v1.0)
@@ -56,6 +57,7 @@ migrations/                   $schema upgrade rules (v0.0-to-v0.9, v0.9-to-v1.0)
 | Schema version | Status |
 |---|---|
 | v1.0 | current frozen baseline |
+| v1.1 | rule_set only: constraint relaxation (transform cap 128), fully compatible |
 | v0.9 | coexists for legacy assets |
 | v0.9-to-v1.0 | migration line, see [`migrations/`](migrations) |
 

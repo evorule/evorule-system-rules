@@ -6,6 +6,9 @@
 
 ## [Unreleased]
 
+### 新增
+- `rule_set/v1.1` schema（transform 数组上限 64→128，双版本协议约束放宽/补丁级增量，完全兼容零迁移，v1.0 冻结存量原样保留）：唯一变化为 `transform.maxItems` 64→128 及对应 description，与引擎 TCB `MAX_TRANSFORM_RULES` 常量同步；`migration/v1.0` 的同款 maxItems 判定为不动（migration 的 transform 数组是迁移脚本自身规则数，与规则集容量无涉，无放宽需求；冻结纪律同 v1.0，如未来需要另立版本）；golden 件零改（均未钉 64）；`evorule-constitution` crate 0.3.4：`rule_set/v1.1` 内嵌随动（build.rs SCHEMAS 清单 + lib.rs EMBEDDED 表 + 版本递增）；README schema 清单与兼容表随动；`docs/reference/illegal-restrictions-manual.md` F-05 终止性约束四元组随引擎常量现状刷新（128/64/64/2048）
+
 ### 修正
 - `tools/scan_repo_json.py` 豁免清单 + `docs/explanation/04-governance-scope.md` 豁免表补登记根仓 3 件工具夹具（`evorule-eval/fixtures/plan.json`、`rules_merged.json`、`scripts/g5_golden_vectors.json`）：verify-all 门禁步干净检出实测 3 违规；判性均为工具自用夹具（eval harness 读取 / 跨语言黄金向量验证器输入），非系统 JSON 加载通路，其中两件顶层非对象（与 TCB discipline 裸数组先例同款）；复跑归零（豁免 12→15，违规 3→0）
 
