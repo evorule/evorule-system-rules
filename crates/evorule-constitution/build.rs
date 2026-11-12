@@ -65,6 +65,16 @@ fn main() {
         // 元 schema：领域命名域（domain/*）纪律件，消费方=tools/check_domain_meta.py，
         // 非组件运行时契约
         "domain/domain_schema.meta.v1.json",
+        // law_set（第七 kind，B-293 SSOT 归位）：组件消费=server law_schema 独立
+        // 嵌入副本（check_schema_sync 守卫）+ rule 仓 domain 命名域版（D3 resolver），
+        // 宪法 crate 运行时不内嵌；v1.0=归位版，v1.1=intake 纪律版（form 四型 +
+        // intake_channel 出身通道）
+        "law_set/v1.0.json",
+        "law_set/v1.1.json",
+        // anatomy 域 schema（代注册，B-277 遗留）：rule 仓 data/ 资产守护（RG-1）
+        // 从宪法仓解析 schema_ref；原文件诞生于 rule 仓 domain 命名域，此处=权威
+        // 归属位，宪法 crate 运行时不内嵌
+        "domain/anatomy/skeleton-hand/v1.json",
     ];
 
     let schemas_dir = std::path::Path::new(&manifest)
