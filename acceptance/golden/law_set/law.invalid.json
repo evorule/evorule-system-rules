@@ -1,0 +1,17 @@
+{
+  "id": "invalid_unknown_field",
+  "formula": "E = m * c ^ 2",
+  "symbols": {
+    "E": "rest energy of the body",
+    "m": "mass of the body",
+    "c": "speed of light in vacuum"
+  },
+  "si_units": {
+    "E": "joule",
+    "m": "kilogram",
+    "c": "meter_per_second"
+  },
+  "max_version_depth": 1,
+  "monotone_form": true,
+  "unknown_field": "additionalProperties=false must reject this"
+}
