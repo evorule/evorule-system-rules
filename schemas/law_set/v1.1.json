@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evorule.org/schemas/law_set/v1.1.json",
+  "title": "evorule law_set v1.1（intake 纪律版：form 四型 + intake_channel 出身通道）",
+  "description": "定律集合（law_set）数据集契约 v1.1。相对 v1.0 为 intake 纪律强化（自愿升版，v1.0 存量零迁移可用）：$defs/law 新增必填 form（形态四型 equation_identity|constraint|procedure|definition——闸面按形态选判据）与必填 intake_channel（出身通道 human_curated|llm_proposal——审计事实永不回写，与条目信任级正交：出身不因信任级晋升而洗白）；其余逐字段与 v1.0 一致。发布链（候选→主池）产 v1.1 文档；v1.0 冻结存量继续合法。",
+  "x_legal_authority_notice": "本 schema 由 EvoRule 团队维护,以 CC0 1.0 公共领域奉献(见 schemas/LICENSE-SCHEMAS.md);通过本 schema 校验或创作的 system JSON 内容 IP 归作者所有,evorule 不主张。详见 ../../LEGAL_NOTES.md 与 ../../docs/adr/scope-split-ip-model.md",
+  "type": "object",
+  "required": ["$schema", "kind", "id", "version", "laws"],
+  "properties": {
+    "$schema": { "const": "https://evorule.org/schemas/law_set/v1.1.json" },
+    "kind": { "const": "law_set" },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "metadata": { "type": "object" },
+    "laws": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/law" },
+      "maxItems": 128
+    }
+  },
+  "$defs": {
+    "law": {
+      "type": "object",
+      "required": ["id", "formula", "symbols", "si_units", "max_version_depth", "monotone_form", "form", "intake_channel"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "formula": { "type": "string", "minLength": 3 },
+        "symbols": {
+          "type": "object",
+          "minProperties": 2,
+          "additionalProperties": { "type": "string" }
+        },
+        "si_units": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "symbol -> pint-parseable SI unit expression"
+        },
+        "domain": { "type": "string" },
+        "domains": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "多域归属（域向量扩多域；缺省=单域 domain 字段语义不变）"
+        },
+        "cross_refs": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "required": ["target", "domain"],
+            "additionalProperties": false,
+            "properties": {
+              "target": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "被引用律式 id（同集内）" },
+              "domain": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "引用边落点域（跨域声明）" }
+            }
+          },
+          "description": "跨域引用边显式声明（D2=A：注册时声明，禁自动发现）"
+        },
+        "solvable": { "type": "array", "items": { "type": "string" } },
+        "derivation": { "type": "array", "items": { "type": "string" } },
+        "tier": { "enum": ["light", "full"], "default": "full" },
+        "max_version_depth": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "版本链高度 h_p（有限性声明）：该律式版本链的最大深度，必填且 ≥1"
+        },
+        "monotone_form": {
+          "type": "boolean",
+          "description": "单调形态声明：值必须为 true（非单调形态律式拒收，须以时间锚定改写重交）"
+        },
+        "time_anchor": {
+          "type": "string",
+          "minLength": 1,
+          "description": "时间锚定改写声明锚（可选；formula 命中否定类构造时必须非空）"
+        },
+        "form": {
+          "enum": ["equation_identity", "constraint", "procedure", "definition"],
+          "description": "形态四型（入库必填轴）：恒真等式/约束式/过程式/定义式——闸面按形态选判据"
+        },
+        "intake_channel": {
+          "enum": ["human_curated", "llm_proposal"],
+          "description": "出身通道（审计事实，永不回写）：与条目信任级正交——出身不因信任级晋升而洗白"
+        },
+        "metadata": {
+          "type": "object",
+          "required": ["source"],
+          "properties": { "source": { "type": "string" }, "verified": { "type": "string" } }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
