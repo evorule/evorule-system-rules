@@ -11,7 +11,7 @@ Every system JSON in the ecosystem is governed by this repo — it defines what 
 
 ## Schema Overview
 
-Six `kind` values cover everything the platform loads:
+Seven `kind` values cover everything the platform loads:
 
 | kind | Purpose | Examples |
 |---|---|---|
@@ -20,6 +20,7 @@ Six `kind` values cover everything the platform loads:
 | `workflow_dag` | DAG workflows | `evo-agent/rules/workflows/*.json` |
 | `service_registry` | service registry / HTTP routes | `service_registry.json` |
 | `knowledge` | knowledge bases | `examples/knowledge.example.json` (draft status; the server's `docs/PITFALLS.json` is an exempt reference artifact, not an instance of this kind) |
+| `law_set` | certified law sets (equation-identity corpus) | `evorule-rule/data/law_sets/*.json` |
 | `migration` | `$schema` upgrade rules | produced in this repo |
 
 Every system JSON carries five fixed top-level fields plus a kind-specific body:
