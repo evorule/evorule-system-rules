@@ -16,6 +16,8 @@
   "tier": "full",
   "max_version_depth": 1,
   "monotone_form": true,
+  "form": "equation_identity",
+  "intake_channel": "human_curated",
   "metadata": {
     "source": "Newton, Philosophiae Naturalis Principia Mathematica (1687); standard classical mechanics formulation"
   }
