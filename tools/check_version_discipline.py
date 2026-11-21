@@ -9,9 +9,11 @@
     - 文件删除：结构内容与任一新增文件等价 → 视为版本演进（旧文件被新版本取代）合法；
       否则红灯（版本废弃须走 schema 演进 SOP，不得静默删除）。
 
-结构面判定：递归剥除各级 "description" 键后比较 JSON 等价——description-only
-变更属描述级轻流程（[CON-G-001]），其余一切变化（required/enum/properties/$defs/
-$id 等）均为结构面。
+结构面判定：递归剥除各层元数据文本键（"description"、"title"、
+"x_legal_authority_notice"）后比较 JSON 等价——元数据文本变更属描述级
+轻流程（[CON-G-001]），其余一切变化（required/enum/properties/$defs/
+$id 等）均为结构面。这三个键是纯文档展示面（不影响任何实例校验结果），
+其文本修订（含翻译）不需要升版。
 
 用法：
     python tools/check_version_discipline.py [--base origin/main] [--json]
@@ -35,7 +37,11 @@ SCOPE = "schemas/"
 VER_RE = re.compile(r"^v(\d+)\.(\d+)(?:\.(\d+))?\.json$")
 
 
-def strip_descriptions(node, drop=("description",)):
+# 元数据文本键：纯文档展示面，不影响任何实例校验结果——其变更（含翻译）属描述级
+METADATA_TEXT_KEYS = ("description", "title", "x_legal_authority_notice")
+
+
+def strip_descriptions(node, drop=METADATA_TEXT_KEYS):
     """递归剥除指定键（默认 description），返回可比较的规范化结构。"""
     if isinstance(node, dict):
         return {k: strip_descriptions(v, drop) for k, v in node.items() if k not in drop}
